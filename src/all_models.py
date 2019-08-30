@@ -43,11 +43,6 @@ class ResNext_50(tf.keras.Model):
       
         return loss, correct
 
-resnext_model = ResNext_50(num_classes=10)
-
-resnext_model(np.random.normal(size=(32,32,3)).reshape(1,32,32,3).astype(np.float16), 
-              np.array([1]))
-
 """# DavidNet"""
 
 class DavidNet(tf.keras.Model):
@@ -109,7 +104,4 @@ class DavidNet(tf.keras.Model):
     
     return loss, correct
 
-davidnet_model = DavidNet(num_classes=10)
 
-davidnet_model(np.random.normal(size=(32,32,3)).reshape(1,32,32,3).astype(np.float16), 
-              np.array([1]))

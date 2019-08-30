@@ -10,6 +10,7 @@ Original file is located at
 """
 
 import tensorflow as tf
+import numpy as np
 
 class BatchNorm(tf.keras.Model):
   
@@ -303,6 +304,7 @@ class ResNeXtBlk(tf.keras.Model):
     def call(self, inputs_x):
         
         return self.residual_layer(inputs_x)
+      
 
 
 """# Inception
