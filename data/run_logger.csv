@@ -1,0 +1,2 @@
+total_model_parameters,epochs,batch_size,max_lr,min_lr,anneal_perc,max_mom,min_mom,time_taken,train_acc,test_acc,wd,train_loss,test_loss,runs,log_time,comments
+343264,2,32,0.4,1e-06,0.15,0.95,0.8,115.28890609741211,0.13,0.1,0.0005,2.34421875,2.316484375,"{'epoch': [1, 2], 'time': [57.78938937187195, 115.28236103057861], 'lr': [0.04000000000000001, 0.020000500000000004], 'train_acc': [0.13, 0.13], 'test_acc': [0.1, 0.1], 'train_loss': [2.34765625, 2.34421875], 'test_loss': [2.3115625, 2.316484375]}",2019-08-31 04:11:53,Integration tests
