@@ -127,12 +127,8 @@ class Run():
 
       t = time.time()
       
-      tst_data = self.tst_data_supplier(0)
+      (test_set, len_test) = tst_data_supplier(0)
       
-      len_test = tst_data[0].shape[0]
-
-      test_set = tf.data.Dataset.from_tensor_slices(tst_data).batch(batch_size).prefetch(1)
-
       log_runs = {"epoch":[],"time":[], "lr":[], "train_acc":[], "test_acc":[], "train_loss":[], "test_loss":[]}
 
       t = time.time()
@@ -141,12 +137,8 @@ class Run():
 
       for epoch in tqdm(range(epochs)):   
         
-        trn_data = self.trn_data_supplier(epoch)
+        (train_set, len_train) = trn_data_supplier(epoch)
         
-        len_train = trn_data[0].shape[0]
-
-        train_set = tf.data.Dataset.from_tensor_slices(trn_data).shuffle(len_train).batch(batch_size).prefetch(1)
-
         train_loss = test_loss = train_acc = test_acc = 0.0
 
         tf.keras.backend.set_learning_phase(1)
@@ -262,7 +254,7 @@ class Run():
   ############___________LR FINDER______________###############
       
       
-  def lr_finder(self, model_class,
+  def lr_finder(self, model_class, trn_data_supplier, tst_data_supplier,
                 lr_list=[0.001, 0.003, 0.005, 0.007, 0.008, 0.009, 0.01, 0.015, 0.02,0.03, 0.04, 0.05, 0.08, 
                        0.1, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 2, 3,4, 5, 6, 7, 8, 9, 10],               
               train_num_batches = 5, test_num_batches = 3, add_cutout = True, break_loss_factor=5):
@@ -296,38 +288,6 @@ class Run():
       opt_lrfinder = tf.train.MomentumOptimizer(lr_func, momentum=mom_func, use_nesterov=True)
 
 
-      def supply_lrfinder_train_images(epoch, train_num_batches=train_num_batches, batch_size=self.batch_size):
-
-            runs = 10
-
-            run = epoch % runs
-
-            x_train_lr = (globals()['x_train%s' % epoch_num]).astype(np.float16)
-
-            global y_train_org
-
-            sample_idx = np.random.choice(y_train_lr.size, train_num_batches * batch_size, replace=False)
-
-            x_train_lr = x_train_lr[sample_idx, :, :, :]
-
-            y_train_lr = y_train_org[sample_idx]
-
-            return (x_train_lr, y_train_lr)
-
-      def supply_lrfinder_test_images(epoch, test_num_batches=test_num_batches, batch_size=self.batch_size):
-
-            global x_test_org
-
-            global y_test
-
-            sample_idx = np.random.choice(y_test.size, test_num_batches * batch_size, replace=False)
-
-            x_test_lr = x_test_org[sample_idx, :, :, :]
-
-            y_test_lr = y_test[sample_idx]
-
-            return (x_test_lr, y_test_lr)
-
       print("running lr_finder")
 
       for epoch in tqdm(range(len(lr_list))):
@@ -340,7 +300,7 @@ class Run():
 
           model, time_for_epoch, train_acc, test_acc, train_loss, test_loss = \
           self.train(model=model, opt=opt_lrfinder, lr_func = lr_finder_schedule, global_step=global_step, epochs = 1, batch_size = self.batch_size, 
-                trn_data_supplier=supply_lrfinder_train_images, tst_data_supplier=supply_lrfinder_test_images, skip_testing_epochs = self.skip_testing_epochs, log_results = False, verbose=False)
+                trn_data_supplier=trn_data_supplier, tst_data_supplier=tst_data_supplier, skip_testing_epochs = self.skip_testing_epochs, log_results = False, verbose=False)
 
           if epoch_counter == 1:
 
