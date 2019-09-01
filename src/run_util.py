@@ -157,7 +157,7 @@ class Run():
 
       t = time.time()
 
-      print("****training starts****")
+      
 
       for epoch in tqdm(range(epochs)):   
         
@@ -389,7 +389,7 @@ class Run():
 
         self.initialize_everything(params, trn_data_supplier, tst_data_supplier)
 
-        model_tuned, time, train_acc, test_acc, train_loss, test_loss = self.run(model_fn, params, trn_data_supplier, tst_data_supplier)
+        model_tuned, time, train_acc, test_acc, train_loss, test_loss = self.run(model_fn, params, trn_data_supplier, tst_data_supplier, verbose=False)
 
         if choose_on == "test_acc":
 
@@ -417,7 +417,7 @@ class Run():
 
   ############___________RUN______________###############
     
-  def run(self, model_fn, params, trn_data_supplier, tst_data_supplier):
+  def run(self, model_fn, params, trn_data_supplier, tst_data_supplier, verbose=True):
     
       model = model_fn()
       
@@ -432,7 +432,7 @@ class Run():
       return self.train(model=model, opt=self.opt, lr_func = self.lr_schedule, global_step=global_step, epochs = self.epochs,
                         batch_size = self.batch_size, trn_data_supplier=self.trn_data_supplier,
                         tst_data_supplier=self.tst_data_supplier, skip_testing_epochs = self.skip_testing_epochs, 
-                        log_results = True, verbose=True)
+                        log_results = True, verbose=verbose)
   ############___________END OF RUN______________###############  
   #------------------------------------------------------------------------------------------------------------------------------#  
     
