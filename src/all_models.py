@@ -41,7 +41,7 @@ class ResNext_50(tf.keras.Model):
     
         correct = tf.reduce_sum(tf.cast(tf.math.equal(tf.argmax(x, axis = 1), y), tf.float32))
       
-        return loss, correct
+        return loss, correct, h
 
 """# DavidNet"""
 
@@ -102,6 +102,6 @@ class DavidNet(tf.keras.Model):
     
     correct = tf.reduce_sum(tf.cast(tf.math.equal(tf.argmax(h, axis = 1), y), tf.float16))
     
-    return loss, correct
+    return loss, correct, h
 
 

@@ -4,6 +4,30 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from tqdm import tqdm_notebook as tqdm
 import os, datetime, time
+import visual_utils
+from sklearn.metrics import confusion_matrix
+import seaborn as sn
+
+def predict(model, img_list):
+    
+    num_images, img_x, img_y, img_c= img_list.shape
+    
+    predictions = []
+    
+    for img in img_list:
+        
+        img = img.reshape(1, img_x, img_y, img_c)
+        
+        output = model(img, [1])
+        
+        pred = tf.reshape(output[2], [-1])
+        
+        pred = np.argmax(pred)
+        
+        predictions += [pred]
+    
+    return np.array(predictions)
+        
 
 class Run():
   
@@ -147,7 +171,7 @@ class Run():
 
           with tf.GradientTape() as tape:
 
-            loss, correct = model(x, y)
+            loss, correct, prob = model(x, y)
 
           var = model.trainable_variables
 
@@ -171,7 +195,7 @@ class Run():
 
         for (x, y) in test_set:
 
-          loss, correct = model(x, y)
+          loss, correct, prob = model(x, y)
 
           test_loss += loss.numpy()
 
@@ -397,6 +421,8 @@ class Run():
     
       model = model_fn()
       
+      self.model = model
+      
       self.initialize_everything(params, trn_data_supplier, tst_data_supplier)
       
       global_step = self.global_step
@@ -409,5 +435,75 @@ class Run():
                         log_results = True, verbose=True)
   ############___________END OF RUN______________###############  
   #------------------------------------------------------------------------------------------------------------------------------#  
+    
+  def show_missclassified_images(self, num_images=10, 
+                                 class_names = ['airplane','automobile','bird','cat', 'deer','dog','frog','horse','ship','truck'],
+                                 tst_data_supplier=None):
+    
+    if tst_data_supplier:
+        
+        data_supplier = tst_data_supplier
+    else:
+        data_supplier = self.tst_data_supplier
+        
+    dataset, len_test = data_supplier(0)
+        
+    for x, y in dataset:
+        
+        x=x.numpy()
+        
+        y=y.numpy()
+        
+        preds = predict(self.model, x)
 
+        mis_index = visual_utils.misclassified_index(self.model, x, y)        
+
+        labels = [class_names[y[i]]for i in mis_index]
+        
+        pred_label = [class_names[preds[i]]for i in mis_index]
+
+        visual_utils.image_gallary(num_images, x.astype(np.float32)[mis_index], labels, pred_label)
+        
+        return
+    
+  def plot_confusion_matrix(self, tst_data_supplier=None, class_names=['airplane','automobile','bird','cat', 'deer','dog','frog','horse','ship','truck']):
+        
+        if tst_data_supplier:
+        
+            data_supplier = tst_data_supplier
+        else:
+            
+            data_supplier = self.tst_data_supplier
+            
+        dataset, len_test = data_supplier(0)
+        
+        all_preds = []
+        
+        all_y = []
+        
+        for x, y in dataset:
+            
+            x = x.numpy()
+            
+            y = y.numpy()
+            
+            preds = predict(self.model, x)
+            
+            all_preds += preds.tolist()
+            
+            all_y += y.tolist()
+            
+        cm = confusion_matrix(all_y, all_preds)
+        
+        df_cm = pd.DataFrame(cm, index = [i for i in class_names],
+                  columns = [i for i in class_names])
+            
+            
+        plt.figure(figsize = (10,7))
+        
+        sn.heatmap(df_cm, annot=True)
+        
+        plt.show()
+            
+        
     
