@@ -10,12 +10,40 @@ import numpy as np
 #import skimage.io as io
 import tensorflow as tf
 from tfrecord_utils import *
+import tarfile
+from six.moves import cPickle as pickle
+import tfrecord_utils
+import os
+from importlib import reload
+reload(tfrecord_utils)
+
+CIFAR_FILENAME = 'cifar-10-python.tar.gz'
+CIFAR_DOWNLOAD_URL = 'https://www.cs.toronto.edu/~kriz/' + CIFAR_FILENAME
+CIFAR_LOCAL_FOLDER = 'cifar-10-batches-py'
 
 
-def _int64_feature(value):
-    return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
-def _bytes_feature(value):
-    return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
+def download_and_extract(data_dir, filename=CIFAR_FILENAME, url=CIFAR_DOWNLOAD_URL):
+  # download CIFAR-10 if not already downloaded.
+  tf.contrib.learn.datasets.base.maybe_download(filename, data_dir,
+                                                url)
+  tarfile.open(os.path.join(data_dir, filename),
+'r:gz').extractall(data_dir)
+
+def _get_file_names():
+  """Returns the file names expected to exist in the input_dir."""
+  file_names = {}
+  file_names['train'] = ['data_batch_%d' % i for i in range(1, 6)]
+  file_names['eval'] = ['test_batch']
+  return file_names
+
+
+def read_pickle_from_file(filename):
+  with tf.gfile.Open(filename, 'rb') as f:
+    if sys.version_info >= (3, 0):
+      data_dict = pickle.load(f, encoding='bytes')
+    else:
+      data_dict = pickle.load(f)
+    return data_dict
 
   # Load images from address
 def load_image(addr,img_size):
@@ -81,40 +109,65 @@ def do_onetime_processing(x_train, y_train, x_test, y_test, normalize=True, pad=
     return (x_train.astype(np.float16), y_train.astype(np.int64), x_test.astype(np.float16), y_test.astype(np.int64))
     
 
-def get_data(dataset_name = "CIFAR10", tfrecords_flag=False, 
+def get_data(data_dir="../data/", 
+             dataset_name = "CIFAR10", tfrecords_flag=False, 
+             url=CIFAR_DOWNLOAD_URL, local_folder=CIFAR_LOCAL_FOLDER,
              tfrec_trn_pth='../data/train/train.tfrecords', tfrec_tst_pth='../data/test/test.tfrecords',
             np_trn_pth= ["../data/train/train_x.npy","../data/train/train_y.npy"] , 
              np_tst_pth=["../data/test/test_x.npy", "../data/test/test_y.npy"]):
     
-    print("Downloading..")
+    ###### ------- Bhuvn's implementation of tf records ---------########
+    if tfrecords_flag:
+        
+        print("saving to tf records")
+        
+        download_and_extract(data_dir, filename=CIFAR_FILENAME, url=CIFAR_DOWNLOAD_URL)
+        
+        file_names = _get_file_names()
+        
+        input_dir = os.path.join(data_dir, local_folder)
+        
+        
     
-    (x_train, y_train), (x_test, y_test) = load_tfdata(dataset_name)
-    
+        for mode, files in file_names.items():
+
+            input_files = [os.path.join(input_dir, f) for f in files]
+
+            output_file = os.path.join(data_dir, mode, mode + '.tfrecords')
+            
+            
+
+            try:
+
+                os.remove(output_file)
+            except OSError:
+
+                pass
+
+            # Convert to tf.train.Example and write the to TFRecords.
+            tfrecord_utils.convert_to_tfrecord(input_files, output_file)
+            
+        print("getting tf records complete")
+            
+        return
+        ###### ------- Bhuvn's implementation ends ---------########
+
+    #### For numpy array saving ###########
     print("Preprocessing..")
     
     x_train, y_train, x_test, y_test = do_onetime_processing(x_train, y_train, x_test, y_test)
     
     print("Saving..")
     
-    if tfrecords_flag:
+    print("saving to numpy pickle")
         
-        print("saving to tf records")
+    np.save(np_trn_pth[0], x_train)
         
-        createDataRecord(tfrec_trn_pth, x_train, y_train)
+    np.save(np_trn_pth[1] ,y_train)
         
-        createDataRecord(tfrec_tst_pth, x_test, y_test)
+    np.save(np_tst_pth[0], x_test)
         
-    else:
-        
-        print("saving to numpy pickle")
-        
-        np.save(np_trn_pth[0], x_train)
-        
-        np.save(np_trn_pth[1] ,y_train)
-        
-        np.save(np_tst_pth[0], x_test)
-        
-        np.save(np_tst_pth[1] ,y_test)
+    np.save(np_tst_pth[1] ,y_test)
         
 def load_saved_numpy_data(train_path=["../data/train/train_x.npy","../data/train/train_y.npy"],
                          test_path=["../data/test/test_x.npy", "../data/test/test_y.npy"]):
@@ -128,4 +181,21 @@ def load_saved_numpy_data(train_path=["../data/train/train_x.npy","../data/train
     y_test = np.load(test_path[1])
     
     return x_train, y_train, x_test, y_test
+
+def load_tfrecords(batch_size, data_dir="../data/"):
+    
+    modes = ["train", "eval"]
+    
+    datasets = {}
+    
+    for mode in modes:        
+
+        path = os.path.join(data_dir, mode, mode + '.tfrecords')    
+
+        dataset = TfDataSetFromRecords(path, subset=mode)
+
+        datasets[mode] = dataset.make_dataset(batch_size)
+        
+    return datasets
+                   
         

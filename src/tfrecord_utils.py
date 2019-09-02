@@ -1,69 +1,137 @@
 import tensorflow as tf
+import functools
+import data_pipeline
+import os
+from importlib import reload
+reload(data_pipeline)
 
-# store data in tfrecord
-def createDataRecord(out_filename, addrs, labels):
-    # open the TFRecords file
-    writer = tf.python_io.TFRecordWriter(out_filename)
-    for i in range(len(addrs)):
-        # print how many images are saved every 10000 images
-        if not i % 10000:
-            print('Train data: {}/{}'.format(i, len(addrs)))
-            sys.stdout.flush()
-        # Load the image
-        img = addrs[i]
 
-        label = labels[i]
+HEIGHT = 32
+WIDTH = 32
+DEPTH = 3
 
-        if img is None:
-            continue
+CIFAR_FILENAME = 'cifar-10-python.tar.gz'
+CIFAR_DOWNLOAD_URL = 'https://www.cs.toronto.edu/~kriz/' + CIFAR_FILENAME
+CIFAR_LOCAL_FOLDER = 'cifar-10-batches-py'
 
-        # Create a feature
-        feature = {
-            'image_raw': _bytes_feature(img.tostring()),
-            'label': _int64_feature(label)
-        }
-        # Create an example protocol buffer
-        example = tf.train.Example(features=tf.train.Features(feature=feature))
-        
-        # Serialize to string and write on the file
-        writer.write(example.SerializeToString())
-        
-    writer.close()
-    sys.stdout.flush()
+def _int64_feature(value):
+    return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
+def _bytes_feature(value):
+    return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
+
+
+def convert_to_tfrecord(input_files, output_file):
+  """Converts a file to TFRecords."""
+  print('Generating %s' % output_file)
+  with tf.python_io.TFRecordWriter(output_file) as record_writer:
+    for input_file in input_files:
+      data_dict = data_pipeline.read_pickle_from_file(input_file)
+      data = data_dict[b'data']
+      labels = data_dict[b'labels']
+      num_entries_in_batch = len(labels)
+      for i in range(num_entries_in_batch):
+        example = tf.train.Example(features=tf.train.Features(
+            feature={
+                'image': _bytes_feature(data[i].tobytes()),
+                'label': _int64_feature(labels[i])
+            }))
+        record_writer.write(example.SerializeToString())
+
+
+class TfDataSetFromRecords(object):
+  def __init__(self, path, subset="train"):
     
-def tfexample_numpy_image_parser(tfexample: tf.train.Example, h: int, w: int, c: int = 3, dtype=tf.float32):
-    feat_dict = {'image': tf.FixedLenFeature([h * w * c], dtype),
-                 'label': tf.FixedLenFeature([], tf.int64)}
-    feat = tf.parse_single_example(tfexample, features=feat_dict)
-    x, y = feat['image'], feat['label']
-#     x = tf.cast(x, tf.float32)
-#     y = tf.cast(y, tf.int32)
-    x = tf.reshape(x, [h, w, c])
-    return x, y
+    self.path = path
+    
+    self.subset = subset
+    
+  def get_filenames(self):
+    return [self.path]
 
-def parser_train(tfexample):
-  x, y = tfexample_numpy_image_parser(tfexample, img_size, img_size)
-  x = random_pad_crop(x, 4)
-  x = random_flip(x)
-  x = cutout(x, 8, 8)
-  return x, y
+  def parser(self, serialized_example):
+    features = tf.io.parse_single_example(
+        serialized_example,
+        features={
+            'image': tf.io.FixedLenFeature([], tf.string),
+            'label': tf.io.FixedLenFeature([], tf.int64),
+        })
+    image = tf.decode_raw(features['image'], tf.uint8)
+    image.set_shape([DEPTH * HEIGHT * WIDTH])
 
-parser_test = lambda x: tfexample_numpy_image_parser(x, img_size, img_size)
+    # Reshape from [depth * height * width] to [depth, height, width].
+    image = tf.cast(
+        tf.transpose(tf.reshape(image, [DEPTH, HEIGHT, WIDTH]), [1, 2, 0]),
+        tf.float32)
+    label = tf.cast(features['label'], tf.int64)
 
+    # Custom preprocessing.
+    #image = self.preprocess(image)
 
-def tfrecord_ds(file_pattern: str, parser, batch_size: int, training: bool = True, shuffle_sz: int = 50000) -> tf.data.Dataset:
-    dataset = tf.data.TFRecordDataset(filenames=file_pattern, num_parallel_reads=40)
-    dataset = dataset.apply(
-        tf.contrib.data.shuffle_and_repeat(shuffle_sz, 1)
-    )
-    dataset = dataset.apply(
-        tf.contrib.data.map_and_batch(parser, batch_size, num_parallel_calls=2)
-    )
-    #dataset = dataset.map(parser, num_parallel_calls=12)
-    #dataset = dataset.batch(batch_size=1000)
-    dataset = dataset.prefetch(1)
+    return image, label
+
+  # Use make batch and edit the code accordingly if we have multiple gpus(then we shall need to edit the train code accordingly)
+  def make_batch(self, batch_size):
+    """Read the images and labels from 'filenames'."""
+    filenames = self.get_filenames()
+    # Repeat infinitely.
+    dataset = tf.data.TFRecordDataset(filenames).repeat()
+
+    # Parse records.
+    dataset = dataset.map(
+        self.parser, num_parallel_calls=batch_size)
+
+    # Potentially shuffle records.
+    if self.subset == 'train':
+      min_queue_examples = int(
+          TfDataSetFromRecords.num_examples_per_epoch(self.subset) * 0.4)
+      # Ensure that the capacity is sufficiently large to provide good random
+      # shuffling.
+      dataset = dataset.shuffle(buffer_size=min_queue_examples + 3 * batch_size)
+
+    # Batch it up.
+    dataset = dataset.batch(batch_size).prefetch(1)
+    iterator = dataset.make_one_shot_iterator()
+    image_batch, label_batch = iterator.get_next()
+
+    return image_batch, label_batch
+
+  def make_dataset(self, batch_size):
+    """Read the images and labels from 'filenames'."""
+    filenames = self.get_filenames()
+    # Repeat infinitely.
+    dataset = tf.data.TFRecordDataset(filenames)#.repeat()
+
+    # Parse records. // num_parallel_calls = <number of available cpu threads> or batch_size
+    dataset = dataset.map(
+        self.parser, num_parallel_calls=batch_size)
+
+    # Potentially shuffle records.
+    if self.subset == 'train':
+      min_queue_examples = int(
+          TfDataSetFromRecords.num_examples_per_epoch(self.subset) * 0.4)
+      # Ensure that the capacity is sufficiently large to provide good random
+      # shuffling.
+      dataset = dataset.shuffle(buffer_size=min_queue_examples + 3 * batch_size)
+
+    # Batch it up.
+    #dataset = dataset.batch(batch_size).prefetch(1)
+
     return dataset
+  
+  def preprocess(self, image):
+    """Preprocess a single image in [height, width, depth] layout."""
+    if self.subset == 'train':
+      # Pad 4 pixels on each dimension of feature map, done in mini-batch
+      image = tf.image.resize_with_crop_or_pad(image, 40, 40)
+      image = tf.image.random_crop(image, [HEIGHT, WIDTH, DEPTH])
+      image = tf.image.random_flip_left_right(image)
+    return image
 
-
-train_input_func = lambda params: tfrecord_ds('train.tfrecords', parser_train, batch_size=params, training=True)
-eval_input_func = lambda params: tfrecord_ds('test.tfrecords', parser_test, batch_size=params, training=False)
+  @staticmethod
+  def num_examples_per_epoch(subset='train'):
+    if subset == 'train':
+      return 50000
+    elif subset == 'eval':
+      return 10000
+    else:
+      raise ValueError('Invalid data subset "%s"' % subset)
