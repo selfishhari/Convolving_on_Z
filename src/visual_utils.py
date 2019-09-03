@@ -162,7 +162,7 @@ def image_gallary(no_of_image, img, img_lbl, pred_lbl = None):
   fig=plt.figure(figsize=(12,12))
   for i in range(0,row*col):
     fig.add_subplot(row,col,i+1)
-    plt.imshow(img[i]) 
+    plt.imshow(img[i].astype(np.uint8)) 
     if pred_lbl == None:
       plt.title('Actual: '+str(img_lbl[i]))
     else:
