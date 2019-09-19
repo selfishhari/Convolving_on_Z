@@ -306,7 +306,116 @@ class ResNeXtBlk(tf.keras.Model):
         return self.residual_layer(inputs_x)
       
 
-
+class DenseNextBlk(tf.keras.Model):
+    
+        def __init__(self, 
+                     
+                     filters=1, 
+                     
+                     pool=tf.keras.layers.MaxPool2D(pool_size=(2, 2), strides=None, padding='same'), 
+                     
+                     kernel_regularizer=None,
+                     
+                     kernel_initializer="glorot_uniform",
+                     
+                     z_dilation_rate=32,
+                     
+                     num_channels_last_layer = 128):
+          
+          super().__init__()
+          
+          self.filters = filters
+          
+          self.kernel_regularizer = kernel_regularizer
+          
+          self.kernel_initializer = kernel_initializer
+          
+          self.conv_bn_3x3 = []
+          
+          self.z_dilation_rate = z_dilation_rate
+          
+          num_output_channels = num_channels_last_layer//z_dilation_rate
+      
+          for i in range(num_output_channels):
+              self.conv_bn_3x3.append(ConvBnRl(filters=self.filters, kernel_size=(3,3), strides=(1,1), padding="same" , dilation_rate=(1,1), 
+                                  kernel_regularizer = self.kernel_regularizer, kernel_initializer=self.kernel_initializer, conv_flag=True, bnflag=True,  relu=True))
+      
+        def space_to_depth(self, x, block_size = 2):
+          
+          if block_size!= 1:
+              return tf.space_to_depth(x, block_size=block_size)
+          else:
+              return x
+      
+        def create_sampling_indices(self, z_dilation_rate, layer_shapes_dict):
+          """
+          Based on z_dilation_rate, sample channels.
+          Create channel index mapping for each layer in i/p to o/p
+          """
+          all_layers_sampling_dict = {}
+          
+          for (k,v) in layer_shapes_dict.items():
+              
+              channels_to_sample = []
+              
+              i = 0
+              
+              while(i < z_dilation_rate):
+                  
+                  channels_to_sample.append(list(range(i, v[3], z_dilation_rate)))
+                  
+                  i += 1
+                  
+              all_layers_sampling_dict[k] = channels_to_sample
+          
+          return all_layers_sampling_dict
+      
+        def convolve_on_samples(self, layers_dict, std_vals=[4, 2, 1]):
+          
+          last_layer = max(layers_dict.keys())
+          
+          last_layer_shape = tf.shape(layers_dict[last_layer])
+          
+          num_output_channels = int(last_layer_shape[3])//self.z_dilation_rate
+          
+          output_channels = []
+          
+          for i in range(num_output_channels):
+              
+              roots = [layers_dict[layer_num][:, :, :, i::self.z_dilation_rate] for layer_num in layers_dict.keys()]
+              
+              roots = [self.space_to_depth(roots[x], block_size=std_vals[x])  for x in range(len(roots))]
+              
+              root = tf.concat(roots, axis=3)
+              
+              img_channel = self.conv_bn_3x3[i](root)#, [5, 1, 8, 8])
+              
+              #print(tf.shape(img_channel))
+              
+              output_channels.append(img_channel)
+              
+          return tf.reshape(tf.concat(output_channels, axis=0), [-1, last_layer_shape[1], last_layer_shape[2], num_output_channels])
+      
+        
+        def call(self, layers_dict):
+          
+          layer_shapes_dict = {}
+          
+          for (k,v) in layers_dict.items():
+              
+              layer_shapes_dict[k] = tf.shape(v)
+          
+          #sampling_dict = self.create_sampling_indices(self.z_dilation_rate, layer_shapes_dict)
+          
+          #print(sampling_dict[0][0])
+          
+          output = self.convolve_on_samples(layers_dict)
+          
+          return output
+          
+          
+        
+        
 """# Inception
 
 class InceptionBlk(tf.keras.Model):
