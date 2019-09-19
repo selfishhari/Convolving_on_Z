@@ -80,8 +80,6 @@ class DenseNext(tf.keras.Model):
     
     gap = tf.concat([gap1, gap2], axis= 1)
     
-    print(tf.shape(gap))
-    
     gap = self.linear(gap) * self.weight
     
     ce = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=gap, labels=y)
