@@ -416,10 +416,216 @@ class DenseNextBlk(tf.keras.Model):
           
         
         
-"""# Inception
+#------------------------------------------------#
+          
+      
+class ConciseDenseBlk(tf.keras.Model):
+    
+    def __init__(self,
+                 pool=tf.keras.layers.MaxPool2D(pool_size=(2, 2), strides=None, padding='same'), 
+                     
+                 kernel_regularizer=None,
+                     
+                 kernel_initializer="glorot_uniform",
+                 
+                 dilation_rate = (2,2),
+                 
+                 layers_filters = {0:5, 1:10, 2:15},
+                 
+                 dimensions_dict = {"inp":(32, 32, 3), "0": (32, 32, 32), "1":(16, 16, 64), 
+                                    "2":(8, 8, 128), "dimensions_to_sample":(16, 16)}
+                 
+                 ):
+        
+        super().__init__()
+        
+        self.layers_filters = layers_filters
 
-class InceptionBlk(tf.keras.Model):
+        self.pool = pool
+        
+        self.kernel_initializer = kernel_initializer
+        
+        self.kernel_regularizer = kernel_regularizer
+        
+        self.dilation_rate = dilation_rate
+        
+        self.num_layers = len(layers_filters.keys())
+        
+        self.convolution_blocks = {}
+        
+        self.dimensions_dict = dimensions_dict
+        
+        
+        for layer in range(self.num_layers):
+            
+            self.convolution_blocks[layer] = []
+            
+            curr_filters = layers_filters[layer]
+            
+            for x in list(range(self.dimensions_dict["dimensions_to_sample"][0])):
+                
+                self.convolution_blocks[layer].append(
+                        ConvBnRl(filters=curr_filters, kernel_size=(3,3), strides=(1,1), padding="same" , dilation_rate=self.dilation_rate, 
+                                      kernel_regularizer = self.kernel_regularizer, kernel_initializer=self.kernel_initializer, conv_flag=True, bnflag=True,  relu=True))
 
-# ResNext_50
-"""
+        return
+    
+    def _create_upsampling_indices(self, layer_shape):
+        
+        indices = []
+        
+        for img_num in range(layer_shape[0]):
+            
+            img_indces = []
+            
+            for x_indx in range(layer_shape[1]):
+                
+                curr_dim_inds = []
+                
+                for y_indx in range(layer_shape[1]):
+                    
+                    curr_dim_inds.append([img_num, x_indx, y_indx])
+                    
+                    curr_dim_inds.append([img_num, x_indx, y_indx])
+                    
+                img_indces.append(curr_dim_inds)
+            
+            indices.append(img_indces)
+                
+        
+        return indices
+    
+    def _upsample_by_replication(self, x, up_factor):
+        
+        
+        gather_indices = self._create_upsampling_indices(x.shape)
+        
+        return tf.gather_nd(x, gather_indices)
+        
+        
+        
+    def set_down_up_sampling(self, layers_dict, downsampling_dict):
+        
+        """
+        Takes a dictionary of each layer output from the primary model architecture
+        Accordingly downsamples initial half layers and upsamples last half layers        
+        """
+        sampled_layers_dict = {}
+        
+        for (layer_num, x) in layers_dict.items():
+            
+            #Do maxpooling n number of times, 
+            #where n is downsampling value for that layer from downsampling_dict
+            
+            down_up_strategy = downsampling_dict[layer_num]
+            
+            for i in range(abs(down_up_strategy)):
+                
+                if down_up_strategy > 0:
+                    x = self.pool(x)
+                else:
+                    x = self._upsample_by_replication(x, abs(down_up_strategy))
+            
+            sampled_layers_dict[layer_num] = x
+            
+        return sampled_layers_dict
+    
+    def transpose_and_convolve(self, layers_dict, downsampling_dict):
+        """
+        Now that images x, y and channels are appropriately down/upsampled to the required extent.
+        
+        Convolution happens with a transposed channel outputs-
+            With original image's x becoming channels for us and the channles across various layers
+            becoming x for us.
+            y remains same.
+            
+            So a channel output of shape 32, 32, 64 is transformed to 64, 32, 32.
+            
+            When scaled across all layers, say we have 3 layers each giving output as (32, 32, 32)
+            (16, 16, 64) (8, 8, 128)
+            
+            This is down and upsampled to (16, 16, 32) (16, 16, 64) (16, 16, 128)^
+            
+            Now the input for convolution would be (32 + 64 +128, 16, 16). Or (224, 16, 16)
+            
+            First layer output of transpose conv would be (222, 14, 16)-without padding and 
+            using a 3*3 conv on all channels with 16 filters
+            
+            
+            ^ Upsampling is done in a memory efficient way. So the input is actually (16, 8, 128),
+            however it is handled while convolving
+        
+        """
+        
+        output_layers_dict = {}
+        
+        num_x_pixels = self.dimensions_dict["dimensions_to_sample"][0]#This will become channels for us
+        
+        for x_idx in range(num_x_pixels):
+            
+            #For each channel stich the layer outputs together
+            
+            stitched_image = None
+            
+            for layer_num in layers_dict.keys():
+                
+                if downsampling_dict[layer_num] < 0:
+                    #if upsamplinh then pick the previous x value because of memory management
+                    
+                    channel = layers_dict[layer_num][:, (x_idx//((abs(downsampling_dict[layer_num]))*2)), :, :]
+                        
+                    
+                else:
+                    channel = layers_dict[layer_num][:, x_idx, :, :]
+                    
+                #print(tf.shape(channel))
+                    
+                
+                channel = tf.reshape(channel, (channel.shape[0], 1, channel.shape[1], channel.shape[2]))
+                channel = tf.transpose(channel, [0, 3, 2, 1])#batch remains same, channels become x, y remains same, x becomes channels
+                
+                #print(tf.shape(channel))
+                    
+                if stitched_image != None:
+                    
+                    stitched_image = tf.concat([stitched_image, channel], axis = 1)
+                    
+                    #print(tf.shape(stitched_image), "stitched image shape")
+                    
+                else:
+                    
+                    stitched_image = channel
+                    
+            #Once images are stiched, perform convolution
+            
+            output_layers_dict[x_idx] = self.convolution_blocks[0][x_idx](stitched_image)
+        
+        return output_layers_dict
+    
+    def apply_convolve_layers(self, channels_dict, num_layers):
+        
+        output_layers_dict = channels_dict
+        
+        for layer in range(num_layers):  
 
+            channels_dict =  output_layers_dict.copy()       
+            
+            for (group, imgs) in channels_dict.items():
+                
+                output_layers_dict[group] = self.convolution_blocks[(layer+1)][group](imgs)
+                
+        return output_layers_dict
+            
+        
+    
+    def call(self, layers_dict, downsampling_dict = {0:1, 1:0, 2:-1}):
+        
+        layers_dict_updown = self.set_down_up_sampling(layers_dict, downsampling_dict)
+        
+        x = self.transpose_and_convolve(layers_dict_updown, downsampling_dict)
+        
+        x = self.apply_convolve_layers(x, (self.num_layers-1))
+        
+        output = tf.concat([v for (k, v) in x.items()], axis=3)
+        
+        return output
