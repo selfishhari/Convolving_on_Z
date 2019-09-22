@@ -20,7 +20,7 @@ def _bytes_feature(value):
     return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
 
 
-def convert_to_tfrecord(input_files, output_file):
+def convert_to_tfrecord(input_files, output_file, mode, preproc_fn):
   """Converts a file to TFRecords."""
   print('Generating %s' % output_file)
   with tf.python_io.TFRecordWriter(output_file) as record_writer:
@@ -28,6 +28,8 @@ def convert_to_tfrecord(input_files, output_file):
       data_dict = data_pipeline.read_pickle_from_file(input_file)
       data = data_dict[b'data']
       labels = data_dict[b'labels']
+      #data = preproc_fn(data, mode)
+      
       num_entries_in_batch = len(labels)
       for i in range(num_entries_in_batch):
         example = tf.train.Example(features=tf.train.Features(
