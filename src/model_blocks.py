@@ -310,7 +310,7 @@ class DenseNextBlk(tf.keras.Model):
     
         def __init__(self, 
                      
-                     filters=64, 
+                     filters=1, 
                      
                      pool=tf.keras.layers.MaxPool2D(pool_size=(2, 2), strides=None, padding='same'), 
                      
