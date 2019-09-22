@@ -24,16 +24,22 @@ def cutout(img: tf.Tensor, height, width, channel = 3):
     x = tf.random.uniform([], 0, shape[0] + 1 - height, dtype=tf.int32)
     img = core.replace_slice(img, tf.zeros([height, width, channel]),)
     return img
-`
+
 ### Rotate 90
 def random_rotate_90(x: tf.Tensor):
     x = tf.image.rot90(x, tf.random_uniform(shape=[], minval=0, maxval=4, dtype=tf.int32))
     return x
 
+def normalize(data:tf.Tensor,mean = [0.4914, 0.4822, 0.4465], std = [0.2023, 0.1994, 0.2010]):
+    normalize = lambda x: ((x - mean) / std).astype('float16')
+    data = data/255
+    norm_data = normalize(data)
+    return norm_data
+
 ### Auto Augment
 
 from PIL import Image
-def AutoAug(img: : tf.Tensor):
+def AutoAug(img: tf.Tensor):
   img = img.numpy()
   autoaug = AutoAugment()
   Auto_aug_im = np.zeros_like(img)

@@ -71,6 +71,34 @@ def normalize_data(data, mean, std):
     
 pad4 = lambda x: np.pad(x, [(0, 0), (4, 4), (4, 4), (0, 0)], mode='reflect')
 
+def onetime_preproc_tfrecords(x, mode, pixel_normalize=True, normalize =False, pad =False, use_imgnet_vals=False):
+    if pixel_normalize:
+        
+        x = x/255
+        
+    if normalize:
+
+        #normalize data
+        x = np.mean(x, axis=(0,1,2))
+        
+
+        
+        if use_imgnet_vals:
+            
+            train_mean = [0.4914, 0.4822, 0.4465]
+            
+            train_std = [0.2023, 0.1994, 0.2010]
+
+        x = normalize_data(x, train_mean, train_std)
+        
+        
+    if (pad) & (mode=="train"):
+        
+        
+        x = pad4(x)
+        
+    return x
+
 def do_onetime_processing(x_train, y_train, x_test, y_test, normalize=True, pad=False, 
                           pixel_normalize=False, use_imgnet_vals=False):
     
@@ -145,7 +173,7 @@ def get_data(data_dir="../data/",
                 pass
 
             # Convert to tf.train.Example and write the to TFRecords.
-            tfrecord_utils.convert_to_tfrecord(input_files, output_file)
+            tfrecord_utils.convert_to_tfrecord(input_files, output_file, mode, preproc_fn=onetime_preproc_tfrecords)
             
         print("getting tf records complete")
             

@@ -48,7 +48,7 @@ class DenseNext(tf.keras.Model):
                
                res=True )
     
-    self.blk4 = DenseNextBlk(z_dilation_rate=8)
+    self.blk4 = DenseNextBlk(z_dilation_rate=4)
     
     self.pool = tf.keras.layers.GlobalMaxPool2D()
     

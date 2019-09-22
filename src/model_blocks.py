@@ -310,7 +310,7 @@ class DenseNextBlk(tf.keras.Model):
     
         def __init__(self, 
                      
-                     filters=1, 
+                     filters=64, 
                      
                      pool=tf.keras.layers.MaxPool2D(pool_size=(2, 2), strides=None, padding='same'), 
                      
@@ -430,7 +430,7 @@ class ConciseDenseBlk(tf.keras.Model):
                  
                  dilation_rate = (2,2),
                  
-                 layers_filters = {0:5, 1:10, 2:15},
+                 layers_filters = {0:16, 1:32, 2:64},
                  
                  dimensions_dict = {"inp":(32, 32, 3), "0": (32, 32, 32), "1":(16, 16, 64), 
                                     "2":(8, 8, 128), "dimensions_to_sample":(16, 16)}
