@@ -52,7 +52,7 @@ zee_block_output = zee_dense_blk(layers_dict)
 import zeedensenet
 reload(model_blocks)
 reload(zeedensenet)
-model = zeedensenet.ZeeDenseNet(dimensions_dict= {"dimensions_to_sample":(16,16)})
+model = zeedensenet.ZeeDenseNet(dimensions_dict= {"dimensions_to_sample":(16,16)}, layers_filters={0:16, 1:32, 2:64})
 
 model(np.random.normal(size=(5,64,64,5)).astype(np.float16), 
               np.array([1, 2, 1, 1, 1]))
@@ -111,6 +111,28 @@ train_dataset = loaded_tfrecs["train"]
 eval_dataset = loaded_tfrecs["eval"]
 
 
+train_mean = np.array([125.30691805, 122.95039414, 113.86538318])
+
+train_std= np.array([62.99321928, 62.08870764, 66.70489964])
+
+normalize = lambda x: ((x - train_mean) / train_std)
+
+def data_aug(x, y):
+    
+    #x = tf.image.per_image_standardization(x)
+    
+    x = normalize(x)
+        
+    x = tf.image.random_flip_left_right(x)
+    
+    paddings = [(4, 4), (4, 4), (0, 0)]
+    
+    x = tf.pad(x, paddings, "REFLECT")
+    
+    x = tf.random_crop(x, [32, 32, 3])
+    
+    return (x, y)
+
 def tst_data_supplier(epoch_num):
     
     batch_size = params_tune["batch_size"]
@@ -136,21 +158,10 @@ def trn_data_supplier(epoch_num):
     return (train_set, len_train)
 
 
-data_aug = lambda x, y: (tf.image.random_flip_left_right(tf.random_crop(x, [32, 32, 3])), y)
+#data_aug = lambda x, y: (tf.image.random_flip_left_right(tf.random_crop(x, [32, 32, 3])), y)
 
-def data_aug(x, y):
-    
-    x = tf.image.per_image_standardization(x)
-        
-    x = tf.image.random_flip_left_right(x)
-    
-    paddings = [(4, 4), (4, 4), (0, 0)]
-    
-    x = tf.pad(x, paddings, "REFLECT")
-    
-    x = tf.random_crop(x, [32, 32, 3])
-    
-    return (x, y)
+
+
 
 import run_util
 
@@ -159,10 +170,10 @@ reload(run_util)
 
 from run_util import Run
 
-model_fn = zeedensenet.ZeeDenseNet
+model = zeedensenet.ZeeDenseNet(dimensions_dict= {"dimensions_to_sample":(8,8)}, layers_filters={0:16, 1:32, 2:64})
 
 
 obj = Run()
 
-x = obj.run(model_fn, params_tune, trn_data_supplier, tst_data_supplier)
+x = obj.run( params_tune, trn_data_supplier, tst_data_supplier, model=model)
     

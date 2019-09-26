@@ -432,8 +432,7 @@ class ConciseDenseBlk(tf.keras.Model):
                  
                  layers_filters = {0:16, 1:32, 2:64},
                  
-                 dimensions_dict = {"inp":(32, 32, 3), "0": (32, 32, 32), "1":(16, 16, 64), 
-                                    "2":(8, 8, 128), "dimensions_to_sample":(16, 16)}
+                 dimensions_dict = {"dimensions_to_sample":(16, 16)}
                  
                  ):
         

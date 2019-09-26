@@ -13,24 +13,14 @@ from model_blocks import *
 
 class ZeeDenseNet(tf.keras.Model):
     
-  def __init__(self, num_classes= 10, f_filter=32, weight=0.125, dimensions_dict = {"dimensions_to_sample":(8,8)}):
+  def __init__(self, num_classes= 10, f_filter=64, weight=0.125, dimensions_dict = {"dimensions_to_sample":(8,8)}, layers_filters = {0:16, 1:32, 2:64}):
     
     super().__init__()
     
     self.init_conv_bn = ConvBnRl(filters=f_filter, kernel_size=(1,1), strides=(1,1), padding="same" , dilation_rate=(1,1), 
                                   kernel_regularizer = None, kernel_initializer='glorot_uniform', conv_flag=True, bnflag=True,  relu=True)
     
-    self.blk1 = ResBlk(cbr = ConvBnRl(filters=f_filter, kernel_size=(3,3), strides=(1,1), padding="same" , conv_flag=True, bnflag=True, relu=True),
-               
-               cbr_res1 = ConvBnRl(filters=f_filter, kernel_size=(3,3), strides=(1,1), padding="same" , conv_flag=True, bnflag=True, relu=True),
-               
-               cbr_res2 = ConvBnRl(filters=f_filter, kernel_size=(3,3), strides=(1,1), padding="same" , conv_flag=True, bnflag=True, relu=True),
-               
-               pool=tf.keras.layers.MaxPool2D(pool_size=(2, 2), strides=None, padding='same'), 
-               
-               res=True )
-    
-    self.blk2 = ResBlk(cbr = ConvBnRl(filters=f_filter*2, kernel_size=(3,3), strides=(1,1), padding="same" , conv_flag=True, bnflag=True, relu=True),
+    self.blk1 = ResBlk(cbr = ConvBnRl(filters=f_filter*2, kernel_size=(3,3), strides=(1,1), padding="same" , conv_flag=True, bnflag=True, relu=True),
                
                cbr_res1 = ConvBnRl(filters=f_filter*2, kernel_size=(3,3), strides=(1,1), padding="same" , conv_flag=True, bnflag=True, relu=True),
                
@@ -40,17 +30,27 @@ class ZeeDenseNet(tf.keras.Model):
                
                res=True )
     
-    self.blk3 = ResBlk(cbr = ConvBnRl(filters=f_filter*3, kernel_size=(3,3), strides=(1,1), padding="same" , conv_flag=True, bnflag=True, relu=True),
+    self.blk2 = ResBlk(cbr = ConvBnRl(filters=f_filter*4, kernel_size=(3,3), strides=(1,1), padding="same" , conv_flag=True, bnflag=True, relu=True),
                
-               cbr_res1 = ConvBnRl(filters=f_filter*3, kernel_size=(3,3), strides=(1,1), padding="same" , conv_flag=True, bnflag=True, relu=True),
+               cbr_res1 = ConvBnRl(filters=f_filter*4, kernel_size=(3,3), strides=(1,1), padding="same" , conv_flag=True, bnflag=True, relu=True),
                
-               cbr_res2 = ConvBnRl(filters=f_filter*3, kernel_size=(3,3), strides=(1,1), padding="same" , conv_flag=True, bnflag=True, relu=True),
+               cbr_res2 = ConvBnRl(filters=f_filter*4, kernel_size=(3,3), strides=(1,1), padding="same" , conv_flag=True, bnflag=True, relu=True),
                
                pool=tf.keras.layers.MaxPool2D(pool_size=(2, 2), strides=None, padding='same'), 
                
                res=True )
     
-    self.blk4 = ConciseDenseBlk(dimensions_dict= {"dimensions_to_sample":(8,8)})
+    self.blk3 = ResBlk(cbr = ConvBnRl(filters=f_filter*8, kernel_size=(3,3), strides=(1,1), padding="same" , conv_flag=True, bnflag=True, relu=True),
+               
+               cbr_res1 = ConvBnRl(filters=f_filter*8, kernel_size=(3,3), strides=(1,1), padding="same" , conv_flag=True, bnflag=True, relu=True),
+               
+               cbr_res2 = ConvBnRl(filters=f_filter*8, kernel_size=(3,3), strides=(1,1), padding="same" , conv_flag=True, bnflag=True, relu=True),
+               
+               pool=tf.keras.layers.MaxPool2D(pool_size=(2, 2), strides=None, padding='same'), 
+               
+               res=True )
+    
+    self.blk4 = ConciseDenseBlk(dimensions_dict= dimensions_dict, layers_filters=layers_filters)
     
     self.pool = tf.keras.layers.GlobalMaxPool2D()
     

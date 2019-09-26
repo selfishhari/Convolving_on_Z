@@ -417,9 +417,15 @@ class Run():
 
   ############___________RUN______________###############
     
-  def run(self, model_fn, params, trn_data_supplier, tst_data_supplier, verbose=True):
+  def run(self, params, trn_data_supplier, tst_data_supplier,model=None, model_fn=None, verbose=True):
+      
+      if model_fn is None:
+          
+          model = model
     
-      model = model_fn()
+      else:
+          
+          model = model_fn()
       
       self.model = model
       
