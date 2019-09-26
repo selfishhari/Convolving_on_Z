@@ -10,6 +10,7 @@ from importlib import reload
 import model_blocks
 reload(model_blocks)
 from model_blocks import *
+from model_blocks import ZeeConvBlk
 
 class ZeeDenseNet(tf.keras.Model):
     
@@ -50,7 +51,7 @@ class ZeeDenseNet(tf.keras.Model):
                
                res=True )
     
-    self.blk4 = ConciseDenseBlk(dimensions_dict= dimensions_dict, layers_filters=layers_filters)
+    self.blk4 = ZeeConvBlk(dimensions_dict= dimensions_dict, layers_filters=layers_filters)
     
     self.pool = tf.keras.layers.GlobalMaxPool2D()
     

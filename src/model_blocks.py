@@ -419,7 +419,7 @@ class DenseNextBlk(tf.keras.Model):
 #------------------------------------------------#
           
       
-class ConciseDenseBlk(tf.keras.Model):
+class ZeeConvBlk(tf.keras.Model):
     
     def __init__(self,
                  pool=tf.keras.layers.MaxPool2D(pool_size=(2, 2), strides=None, padding='same'), 

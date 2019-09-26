@@ -248,6 +248,9 @@ class Run():
   def logger(self, params, run_vals, model, comment="", logfilepath= "../data/run_logger.csv"):
   
       dt = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+      
+      if "model" in params.keys():
+          del params["model"]
 
       params["runs"] = run_vals
 
@@ -371,7 +374,7 @@ class Run():
   
   ############___________GRID SEARCH______________###############
   
-  def grid_search(self, params_tune_grid, trn_data_supplier, tst_data_supplier, choose_on="test_acc", model_fn=None, model=None):
+  def grid_search(self, params_tune_grid, trn_data_supplier, tst_data_supplier, choose_on="test_acc"):
     
       def dict_product(dicts):
     
@@ -393,6 +396,8 @@ class Run():
       for params in dict_product(params_tune_grid):
 
         self.initialize_everything(params, trn_data_supplier, tst_data_supplier)
+        
+        model = params["model"]
         
         if model is None:
             
