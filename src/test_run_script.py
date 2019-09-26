@@ -176,4 +176,35 @@ model = zeedensenet.ZeeDenseNet(dimensions_dict= {"dimensions_to_sample":(8,8)},
 obj = Run()
 
 x = obj.run( params_tune, trn_data_supplier, tst_data_supplier, model=model)
+
+
+model = zeedensenet.ZeeDenseNet(dimensions_dict= {"dimensions_to_sample":(8,8)}, layers_filters={0:2})
+
+
+params_tune = {
+    
+  "epochs": [1, 2] , 
+ 
+  "batch_size" : [BATCH_SIZE],
+
+  "max_lr": [LEARNING_RATE],
+
+  "min_lr":[MIN_LEARNING_RATE],
+
+  "end_anneal_pc":[END_LR_SMOOTHING_PERC],
+
+  "max_mom":[MOMENTUM],
+ 
+  "min_mom":[MIN_MOMENTUM],
+ 
+  "wd":[WEIGHT_DECAY],
+  
+  "skip_testing_epochs":[0],
+    
+  "batches_per_epoch":[100//BATCH_SIZE],
+    
+  "comments":[COMMENTS]
+}
+
+obj.grid_search(params_tune, trn_data_supplier, tst_data_supplier, model=model)
     

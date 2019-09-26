@@ -366,7 +366,7 @@ class Run():
   
   ############___________GRID SEARCH______________###############
   
-  def grid_search(self, model_fn, params_tune_grid, trn_data_supplier, tst_data_supplier, choose_on="test_acc"):
+  def grid_search(self, params_tune_grid, trn_data_supplier, tst_data_supplier, choose_on="test_acc", model_fn=None, model=None):
     
       def dict_product(dicts):
     
@@ -388,9 +388,14 @@ class Run():
       for params in dict_product(params_tune_grid):
 
         self.initialize_everything(params, trn_data_supplier, tst_data_supplier)
-
-        model_tuned, time, train_acc, test_acc, train_loss, test_loss = self.run(model_fn, params, trn_data_supplier, tst_data_supplier, verbose=False)
-
+        
+        if model is None:
+            
+            model_tuned, time, train_acc, test_acc, train_loss, test_loss = self.run(params, trn_data_supplier, tst_data_supplier, verbose=False, model_fn=model_fn)
+            
+        else:            
+            model_tuned, time, train_acc, test_acc, train_loss, test_loss = self.run(params, trn_data_supplier, tst_data_supplier, verbose=False, model=model)
+            
         if choose_on == "test_acc":
 
           if(test_acc > min_val):
