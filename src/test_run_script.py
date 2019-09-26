@@ -181,7 +181,7 @@ x = obj.run( params_tune, trn_data_supplier, tst_data_supplier, model=model)
 model = zeedensenet.ZeeDenseNet(dimensions_dict= {"dimensions_to_sample":(8,8)}, layers_filters={0:2})
 
 
-params_tune = {
+params_tune_grid = {
     
   "epochs": [1, 2] , 
  
@@ -206,5 +206,5 @@ params_tune = {
   "comments":[COMMENTS]
 }
 
-obj.grid_search(params_tune, trn_data_supplier, tst_data_supplier, model=model)
+obj.grid_search(params_tune_grid, trn_data_supplier, tst_data_supplier, model=model)
     
