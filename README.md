@@ -22,7 +22,7 @@
   https://github.com/selfishhari/eva_research_team4/blob/densenext/notebooks/testing_model_api_zeedensenext_2layers.ipynb
   This is the case everytime. 
   When I increase my zeedense layers the accuracy drops.
-  However it reached 85% in just 3-4 epochs and then stagnated
+  However it reached 85% in just 3-4 epochs and then stagnates
   
   
   
