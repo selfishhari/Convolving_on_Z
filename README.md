@@ -18,6 +18,13 @@
   (just a single z-convolution layer with 2 kernels)
   https://github.com/selfishhari/eva_research_team4/blob/densenext/notebooks/testing_model_api_zeedensenext.ipynb
   
+  2 layers of z-convolution with 16 and 32 kernels. Accuracy stuck at 87%. 
+  https://github.com/selfishhari/eva_research_team4/blob/densenext/notebooks/testing_model_api_zeedensenext_2layers.ipynb
+  This is the case everytime. 
+  When I increase my zeedense layers the accuracy drops.
+  However it reached 85% in just 3-4 epochs and then stagnated
+  
+  
   
   The model is in the below file:
   
