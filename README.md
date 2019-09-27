@@ -24,7 +24,7 @@
   https://github.com/selfishhari/eva_research_team4/blob/densenext/src/zeedensenet.py
   
   
-  The required model block (ConciseDenseBlk) is in:
+  The required model block (ZeeConvBlk) is in:
   https://github.com/selfishhari/eva_research_team4/blob/densenext/src/model_blocks.py line number 422
   
   That's a huge file and I need to break it down. But for your reference start from the line number mentioned
