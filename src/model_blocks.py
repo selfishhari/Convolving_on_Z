@@ -503,6 +503,7 @@ class ZeeConvBlk(tf.keras.Model):
         
         
         gather_indices = self._create_upsampling_indices(x.shape)
+        print("upsampling indices created")
         
         return tf.gather_nd(x, gather_indices)
         
@@ -528,7 +529,9 @@ class ZeeConvBlk(tf.keras.Model):
                 if down_up_strategy > 0:
                     x = self.pool(x)
                 else:
+                    print("upsampling")
                     x = self._upsample_by_replication(x, abs(down_up_strategy))
+                    print("upsampling done")
             
             sampled_layers_dict[layer_num] = x
             
