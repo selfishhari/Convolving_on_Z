@@ -624,18 +624,32 @@ class ZeeConvBlk(tf.keras.Model):
     
     def call(self, layers_dict, downsampling_dict = {0:1, 1:0, 2:-1}):
         
+        print("enter-z conv")
+        
         layers_dict_updown = self.set_down_up_sampling(layers_dict, downsampling_dict)
+        
+        print("updown done")
         
         x = self.transpose_and_convolve(layers_dict_updown, downsampling_dict)
         
+        print("transpose done")
+        
         x = self.apply_convolve_layers(x, (self.num_layers-1))
         
+        print("apply conv on layers")
+        
         output = tf.concat([v for (k, v) in x.items()], axis=3)
+        
+        print("concat done")
         
         if self.gap_mode == "x_axis":
             
             return output
         if self.gap_mode == "channel_axis":
             
+            print("transpose")
+            
             return tf.transpose(output, [0, 3, 2, 1])
+        
+            
         
