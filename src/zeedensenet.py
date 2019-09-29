@@ -69,7 +69,7 @@ class ZeeDenseNet(tf.keras.Model):
         
         self.linear[i] = tf.keras.layers.Dense(num_classes, kernel_initializer='glorot_uniform', use_bias=False)
         
-    self.linear["last_layer"] = tf.keras.layers.Dense(num_classes, kernel_initializer='glorot_uniform', use_bias=False)
+    self.linear[-1] = tf.keras.layers.Dense(num_classes, kernel_initializer='glorot_uniform', use_bias=False)
     
     self.weight = weight
     
@@ -86,7 +86,7 @@ class ZeeDenseNet(tf.keras.Model):
             
         if last_layer_flag:
             
-            gap = self.linear["last_layer"](gap_concat) * self.weight
+            gap = self.linear[-1](gap_concat) * self.weight
             
         else:
             
