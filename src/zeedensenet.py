@@ -79,23 +79,23 @@ class ZeeDenseNet(tf.keras.Model):
         
         gap_m = self.pool(layer_dict[layer_num])
         
-        print("m path ran")
+        #print("m path ran")
             
         gap_z = self.pool(self.blk4(layer_dict))
         
-        print("z conv ran")
+        #print("z conv ran")
             
         gap_concat = tf.concat([gap_m, gap_z], axis= 1)
         
             
         if last_layer_flag:
-            print("last linear layer running")
+            #print("last linear layer running")
             gap = self.linear[-1](gap_concat) * self.weight
-            print("last layer ran")
+            #print("last layer ran")
             
         else:
             
-            print("some linear layer running")
+            #print("some linear layer running")
             
             linear_idx = self.multisoft_list.index(layer_num)
                 
@@ -118,7 +118,7 @@ class ZeeDenseNet(tf.keras.Model):
     
     blk1 = self.blk1(init_cbn)
     
-    print("block1 ran")
+    #print("block1 ran")
     
     if 0 in self.multisoft_list:
         
@@ -130,7 +130,7 @@ class ZeeDenseNet(tf.keras.Model):
         
     blk2 = self.blk2(blk1)
     
-    print("block2 ran")
+    #print("block2 ran")
     
     if 1 in self.multisoft_list:
     
@@ -144,7 +144,7 @@ class ZeeDenseNet(tf.keras.Model):
     
     blk3 = self.blk3(blk2)
     
-    print("so did block3")
+    #print("so did block3")
     
     gap3, loss3 = self.get_softmax(y, 2, layer_dict= {0:blk1, 1:blk2, 2:blk3}, last_layer_flag = True)
     
