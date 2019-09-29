@@ -56,12 +56,19 @@ tf.shape(zee_block_output)
 import zeedensenet
 reload(model_blocks)
 reload(zeedensenet)
-model = zeedensenet.ZeeDenseNet(dimensions_dict= {"dimensions_to_sample":(16,16)}, layers_filters={0:16, 1:32, 2:64})
+model = zeedensenet.ZeeDenseNet(
+        dimensions_dict= {"dimensions_to_sample":(16,16)}, 
+        layers_filters={0:16, 1:32, 2:64}, 
+        gap_mode="channel_axis",
+        multisoft_list = [0, 2]
+        )
 
 m_o = model(np.random.normal(size=(5,64,64,5)).astype(np.float16), 
               np.array([1, 2, 1, 1, 1]))
 
-tf.shape(m_o[2])
+print(tf.shape(m_o[2]))
+
+m_o
 
 BATCH_SIZE = 25 #@param {type:"integer"}
 MOMENTUM = 0.95 #@param {type:"number"}
