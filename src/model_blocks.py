@@ -567,11 +567,15 @@ class ZeeConvBlk(tf.keras.Model):
         
         for x_idx in range(num_x_pixels):
             
+            print("x xhannels:", x_idx)
+            
             #For each channel stich the layer outputs together
             
             stitched_image = None
             
             for layer_num in layers_dict.keys():
+                
+                print("layer_num:", layer_num)
                 
                 if downsampling_dict[layer_num] < 0:
                     #if upsamplinh then pick the previous x value because of memory management
@@ -594,14 +598,18 @@ class ZeeConvBlk(tf.keras.Model):
                     
                     stitched_image = tf.concat([stitched_image, channel], axis = 1)
                     
+                    print("stitched")
+                    
                     #print(tf.shape(stitched_image), "stitched image shape")
                     
                 else:
                     
                     stitched_image = channel
                     
+                    print("stitched first time")
+                    
             #Once images are stiched, perform convolution
-            
+            print("convolving")
             output_layers_dict[x_idx] = self.convolution_blocks[0][x_idx](stitched_image)
         
         return output_layers_dict
