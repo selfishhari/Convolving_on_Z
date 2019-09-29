@@ -178,14 +178,20 @@ obj = Run()
 x = obj.run( params_tune, trn_data_supplier, tst_data_supplier, model=model)
 
 
-model = zeedensenet.ZeeDenseNet(dimensions_dict= {"dimensions_to_sample":(8,8)}, layers_filters={0:2})
+model1 = zeedensenet.ZeeDenseNet(f_filter=2, dimensions_dict= {"dimensions_to_sample":(8,8)}, layers_filters={0:2})
+
+model2 = zeedensenet.ZeeDenseNet(f_filter=3, dimensions_dict= {"dimensions_to_sample":(8,8)}, layers_filters={0:2, 1: 3})
+
+model3 = zeedensenet.ZeeDenseNet(f_filter=4, dimensions_dict= {"dimensions_to_sample":(8,8)}, layers_filters={0:2, 1: 2, 2: 3})
 
 
 params_tune_grid = {
+        
+  "model":[model1, model2, model3],
     
-  "epochs": [1, 2] , 
+  "epochs": [1] , 
  
-  "batch_size" : [BATCH_SIZE],
+  "batch_size" : [5],
 
   "max_lr": [LEARNING_RATE],
 
@@ -201,10 +207,14 @@ params_tune_grid = {
   
   "skip_testing_epochs":[0],
     
-  "batches_per_epoch":[100//BATCH_SIZE],
+  "batches_per_epoch":[100//5],
     
   "comments":[COMMENTS]
 }
 
-obj.grid_search(params_tune_grid, trn_data_supplier, tst_data_supplier, model=model)
+obj.grid_search(params_tune_grid, trn_data_supplier, tst_data_supplier)
+
+import all_models
+
+reload(all_models)
     
