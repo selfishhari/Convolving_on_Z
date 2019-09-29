@@ -430,6 +430,8 @@ class ZeeConvBlk(tf.keras.Model):
                  
                  dilation_rate = (2,2),
                  
+                 gap_mode="x_axis",
+                 
                  layers_filters = {0:16, 1:32, 2:64},
                  
                  dimensions_dict = {"dimensions_to_sample":(16, 16)}
@@ -454,6 +456,9 @@ class ZeeConvBlk(tf.keras.Model):
         
         self.dimensions_dict = dimensions_dict
         
+        self.gap_mode = gap_mode
+        
+        
         
         for layer in range(self.num_layers):
             
@@ -464,7 +469,7 @@ class ZeeConvBlk(tf.keras.Model):
             for x in list(range(self.dimensions_dict["dimensions_to_sample"][0])):
                 
                 self.convolution_blocks[layer].append(
-                        ConvBnRl(filters=curr_filters, kernel_size=(3,3), strides=(1,1), padding="same" , dilation_rate=self.dilation_rate, 
+                        ConvBnRl(filters=curr_filters, kernel_size=(3,3), strides=(1,1), padding="valid" , dilation_rate=self.dilation_rate, 
                                       kernel_regularizer = self.kernel_regularizer, kernel_initializer=self.kernel_initializer, conv_flag=True, bnflag=True,  relu=True))
 
         return
@@ -627,4 +632,10 @@ class ZeeConvBlk(tf.keras.Model):
         
         output = tf.concat([v for (k, v) in x.items()], axis=3)
         
-        return output
+        if self.gap_mode == "x_axis":
+            
+            return output
+        if self.gap_mode == "channel_axis":
+            
+            return tf.transpose(output, [0, 3, 2, 1])
+        

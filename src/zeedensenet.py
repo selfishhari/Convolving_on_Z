@@ -14,7 +14,11 @@ from model_blocks import ZeeConvBlk
 
 class ZeeDenseNet(tf.keras.Model):
     
-  def __init__(self, num_classes= 10, f_filter=64, weight=0.125, dimensions_dict = {"dimensions_to_sample":(8,8)}, layers_filters = {0:16, 1:32, 2:64}):
+  def __init__(self, num_classes= 10, f_filter=64, weight=0.125, gap_mode="x_axis",
+               dimensions_dict = {"dimensions_to_sample":(8,8)}, 
+               layers_filters = {0:16, 1:32, 2:64},
+               multisoft_dict = {"m":[0, 1, 2],
+                                 "z":[0, 1, 2]}):
     
     super().__init__()
     
@@ -51,7 +55,7 @@ class ZeeDenseNet(tf.keras.Model):
                
                res=True )
     
-    self.blk4 = ZeeConvBlk(dimensions_dict= dimensions_dict, layers_filters=layers_filters)
+    self.blk4 = ZeeConvBlk(dimensions_dict= dimensions_dict, layers_filters=layers_filters, gap_mode=gap_mode)
     
     self.pool = tf.keras.layers.GlobalMaxPool2D()
     
@@ -80,9 +84,9 @@ class ZeeDenseNet(tf.keras.Model):
     
     gap2 = self.pool(blk4) 
     
-    gap = tf.concat([gap1, gap2], axis= 1)
+    gap_concat = tf.concat([gap1, gap2], axis= 1)
     
-    gap = self.linear(gap) * self.weight
+    gap = self.linear(gap_concat) * self.weight
     
     ce = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=gap, labels=y)
     
@@ -90,4 +94,4 @@ class ZeeDenseNet(tf.keras.Model):
     
     correct = tf.reduce_sum(tf.cast(tf.math.equal(tf.argmax(gap, axis = 1), y), tf.float16))
     
-    return loss, correct, gap    
+    return loss, correct, gap

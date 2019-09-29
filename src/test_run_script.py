@@ -43,19 +43,25 @@ l3 = np.random.normal(size=(3, 8, 8,128)).astype(np.float16)
 
 layers_dict = {0: l1, 1:l2, 2:l3}
 
+layers_dict = {0: l1, 1:l2}
+
 reload(model_blocks)
 
-zee_dense_blk = model_blocks.ConciseDenseBlk()
+zee_dense_blk = model_blocks.ZeeConvBlk(gap_mode="channel_axis")
 
 zee_block_output = zee_dense_blk(layers_dict)
+
+tf.shape(zee_block_output)
 
 import zeedensenet
 reload(model_blocks)
 reload(zeedensenet)
 model = zeedensenet.ZeeDenseNet(dimensions_dict= {"dimensions_to_sample":(16,16)}, layers_filters={0:16, 1:32, 2:64})
 
-model(np.random.normal(size=(5,64,64,5)).astype(np.float16), 
+m_o = model(np.random.normal(size=(5,64,64,5)).astype(np.float16), 
               np.array([1, 2, 1, 1, 1]))
+
+tf.shape(m_o[2])
 
 BATCH_SIZE = 25 #@param {type:"integer"}
 MOMENTUM = 0.95 #@param {type:"number"}
