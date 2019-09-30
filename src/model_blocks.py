@@ -613,7 +613,10 @@ class ZeeConvBlk(tf.keras.Model):
                     
             #Once images are stiched, perform convolution
             print("convolving")
-            output_layers_dict[x_idx] = self.convolution_blocks[0][x_idx](stitched_image)
+            conv_blk = self.convolution_blocks[0][x_idx]
+            print("convshape")
+            print(tf.shape(conv_blk(stitched_image)))
+            output_layers_dict[x_idx] = conv_blk(stitched_image)
         
         return output_layers_dict
     
