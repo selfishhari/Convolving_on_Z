@@ -60,7 +60,7 @@ model = zeedensenet.ZeeDenseNet(
         dimensions_dict= {"dimensions_to_sample":(8,8)}, 
         layers_filters={0:16, 1:32, 2:64}, 
         gap_mode="channel_axis",
-        multisoft_list = [0,1,2]
+        multisoft_list = [0,2]
         )
 
 m_o = model(np.random.normal(size=(15,64,64,5)).astype(np.float16), 
