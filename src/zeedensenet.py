@@ -8,7 +8,7 @@ Created on Sun Sep 22 04:57:35 2019
 import tensorflow as tf
 from importlib import reload
 import model_blocks
-reload(model_blocks)
+#reload(model_blocks)
 from model_blocks import *
 from model_blocks import ZeeConvBlk
 
@@ -26,34 +26,34 @@ class ZeeDenseNet(tf.keras.Model):
     
     self.layers_filters = layers_filters
     
-    self.init_conv_bn = ConvBnRl(filters=f_filter, kernel_size=(1,1), strides=(1,1), padding="same" , dilation_rate=(1,1), 
-                                  kernel_regularizer = None, kernel_initializer='glorot_uniform', conv_flag=True, bnflag=True,  relu=True)
+    self.init_conv_bn = ConvBnRl(filters=f_filter, kernel_size=(3,3), strides=(1,1), padding="same" , dilation_rate=(1,1), 
+                                  kernel_regularizer = None, kernel_initializer='glorot_uniform', conv_flag=True, bnflag=True,  relu=True, kernel_name=str(random.random())+"conv")
     
-    self.blk1 = ResBlk(cbr = ConvBnRl(filters=f_filter*2, kernel_size=(3,3), strides=(1,1), padding="same" , conv_flag=True, bnflag=True, relu=True),
+    self.blk1 = ResBlk(cbr = ConvBnRl(filters=f_filter*2, kernel_size=(3,3), strides=(1,1), padding="same" , conv_flag=True, bnflag=True, relu=True, kernel_name=str(random.random())+"conv"),
                
-               cbr_res1 = ConvBnRl(filters=f_filter*2, kernel_size=(3,3), strides=(1,1), padding="same" , conv_flag=True, bnflag=True, relu=True),
+               cbr_res1 = ConvBnRl(filters=f_filter*2, kernel_size=(3,3), strides=(1,1), padding="same" , conv_flag=True, bnflag=True, relu=True, kernel_name=str(random.random())+"conv"),
                
-               cbr_res2 = ConvBnRl(filters=f_filter*2, kernel_size=(3,3), strides=(1,1), padding="same" , conv_flag=True, bnflag=True, relu=True),
+               cbr_res2 = ConvBnRl(filters=f_filter*2, kernel_size=(3,3), strides=(1,1), padding="same" , conv_flag=True, bnflag=True, relu=True, kernel_name=str(random.random())+"conv"),
                
                pool=tf.keras.layers.MaxPool2D(pool_size=(2, 2), strides=None, padding='same'), 
                
                res=True )
     
-    self.blk2 = ResBlk(cbr = ConvBnRl(filters=f_filter*4, kernel_size=(3,3), strides=(1,1), padding="same" , conv_flag=True, bnflag=True, relu=True),
+    self.blk2 = ResBlk(cbr = ConvBnRl(filters=f_filter*4, kernel_size=(3,3), strides=(1,1), padding="same" , conv_flag=True, bnflag=True, relu=True, kernel_name=str(random.random())+"conv"),
                
-               cbr_res1 = ConvBnRl(filters=f_filter*4, kernel_size=(3,3), strides=(1,1), padding="same" , conv_flag=True, bnflag=True, relu=True),
+               cbr_res1 = ConvBnRl(filters=f_filter*4, kernel_size=(3,3), strides=(1,1), padding="same" , conv_flag=True, bnflag=True, relu=True, kernel_name=str(random.random())+"conv"),
                
-               cbr_res2 = ConvBnRl(filters=f_filter*4, kernel_size=(3,3), strides=(1,1), padding="same" , conv_flag=True, bnflag=True, relu=True),
+               cbr_res2 = ConvBnRl(filters=f_filter*4, kernel_size=(3,3), strides=(1,1), padding="same" , conv_flag=True, bnflag=True, relu=True, kernel_name=str(random.random())+"conv"),
                
                pool=tf.keras.layers.MaxPool2D(pool_size=(2, 2), strides=None, padding='same'), 
                
                res=True )
     
-    self.blk3 = ResBlk(cbr = ConvBnRl(filters=f_filter*8, kernel_size=(3,3), strides=(1,1), padding="same" , conv_flag=True, bnflag=True, relu=True),
+    self.blk3 = ResBlk(cbr = ConvBnRl(filters=f_filter*8, kernel_size=(3,3), strides=(1,1), padding="same" , conv_flag=True, bnflag=True, relu=True, kernel_name=str(random.random())+"conv"),
                
-               cbr_res1 = ConvBnRl(filters=f_filter*8, kernel_size=(3,3), strides=(1,1), padding="same" , conv_flag=True, bnflag=True, relu=True),
+               cbr_res1 = ConvBnRl(filters=f_filter*8, kernel_size=(3,3), strides=(1,1), padding="same" , conv_flag=True, bnflag=True, relu=True, kernel_name=str(random.random())+"conv"),
                
-               cbr_res2 = ConvBnRl(filters=f_filter*8, kernel_size=(3,3), strides=(1,1), padding="same" , conv_flag=True, bnflag=True, relu=True),
+               cbr_res2 = ConvBnRl(filters=f_filter*8, kernel_size=(3,3), strides=(1,1), padding="same" , conv_flag=True, bnflag=True, relu=True, kernel_name=str(random.random())+"conv"),
                
                pool=tf.keras.layers.MaxPool2D(pool_size=(2, 2), strides=None, padding='same'), 
                
@@ -79,23 +79,18 @@ class ZeeDenseNet(tf.keras.Model):
         
         gap_m = self.pool(layer_dict[layer_num])
         
-        print("m path ran")
-            
         gap_z = self.pool(self.blk4(layer_dict))
         
-        print("z conv ran")
-            
         gap_concat = tf.concat([gap_m, gap_z], axis= 1)
         
             
         if last_layer_flag:
-            print("last linear layer running")
+            
             gap = self.linear[-1](gap_concat) * self.weight
-            print("last layer ran")
+            
             
         else:
             
-            print("some linear layer running")
             
             linear_idx = self.multisoft_list.index(layer_num)
                 
@@ -104,7 +99,7 @@ class ZeeDenseNet(tf.keras.Model):
             
             
         ce = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=gap, labels=y)
-            
+        
         loss = tf.reduce_sum(ce)
             
         return (gap, loss)
@@ -118,19 +113,16 @@ class ZeeDenseNet(tf.keras.Model):
     
     blk1 = self.blk1(init_cbn)
     
-    print("block1 ran")
-    
     if 0 in self.multisoft_list:
         
         gap1, loss1 = self.get_softmax(y, 0, layer_dict= {0:blk1})
+        print(loss1)
         
     else:
         
         loss1 = tf.constant(0, dtype="float16")    
         
     blk2 = self.blk2(blk1)
-    
-    print("block2 ran")
     
     if 1 in self.multisoft_list:
     
@@ -144,12 +136,8 @@ class ZeeDenseNet(tf.keras.Model):
     
     blk3 = self.blk3(blk2)
     
-    print("so did block3")
-    
     gap3, loss3 = self.get_softmax(y, 2, layer_dict= {0:blk1, 1:blk2, 2:blk3}, last_layer_flag = True)
     
-    
-        
     loss = tf.math.add_n([loss1 , 0.3 * loss2 , 0.3 * loss3])
     
     correct = tf.reduce_sum(tf.cast(tf.math.equal(tf.argmax(gap3, axis = 1), y), tf.float16))

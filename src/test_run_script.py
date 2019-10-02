@@ -70,13 +70,13 @@ print(tf.shape(m_o[2]))
 
 m_o
 
-BATCH_SIZE = 25 #@param {type:"integer"}
+BATCH_SIZE = 3 #@param {type:"integer"}
 MOMENTUM = 0.95 #@param {type:"number"}
 
 MIN_MOMENTUM = 0.8 #@param {type:"number"}
 LEARNING_RATE = 0.4 #@param {type:"number"}
 WEIGHT_DECAY = 5e-4 #@param {type:"number"}
-EPOCHS = 3 #@param {type:"integer"}
+EPOCHS = 1 #@param {type:"integer"}
 
 
 MIN_LEARNING_RATE = 0.000001 #@param {type:"number"}
@@ -106,7 +106,7 @@ params_tune = {
   
   "skip_testing_epochs":0,
     
-  "batches_per_epoch":100//BATCH_SIZE,
+  "batches_per_epoch":3//BATCH_SIZE,
     
   "comments":COMMENTS
 }
@@ -152,9 +152,9 @@ def tst_data_supplier(epoch_num):
     
     global eval_dataset
   
-    len_test = 50
+    len_test = 3
 
-    test_set = eval_dataset.take(50).map(data_aug).batch(batch_size).prefetch(1)
+    test_set = eval_dataset.take(len_test).map(data_aug).batch(batch_size).prefetch(1)
     
     return (test_set, len_test)
 
@@ -164,9 +164,9 @@ def trn_data_supplier(epoch_num):
   
     global train_dataset
     
-    len_train = 50
+    len_train = 3
 
-    train_set = train_dataset.take(50).map(data_aug).batch(batch_size).prefetch(1)
+    train_set = train_dataset.take(len_train).map(data_aug).batch(batch_size).prefetch(1)
     
     return (train_set, len_train)
 
@@ -178,12 +178,14 @@ def trn_data_supplier(epoch_num):
 
 import run_util
 
-
+import zeedensenet
+reload(model_blocks)
+reload(zeedensenet)
 reload(run_util)
 
 from run_util import Run
 
-model = zeedensenet.ZeeDenseNet(dimensions_dict= {"dimensions_to_sample":(8,8)}, layers_filters={0:16, 1:32, 2:64})
+model = zeedensenet.ZeeDenseNet(f_filter=16, dimensions_dict= {"dimensions_to_sample":(8,8)}, layers_filters={0:4, 1:8})
 
 
 obj = Run()

@@ -11,6 +11,7 @@ Original file is located at
 
 import tensorflow as tf
 import numpy as np
+import random
 
 class BatchNorm(tf.keras.Model):
   
@@ -52,7 +53,7 @@ class spatially_separable_conv(tf.keras.Model):
 class ConvBnRl(tf.keras.Model):
   
   def __init__(self, filters=32, kernel_size=(3,3), strides=(1,1), padding="same" , dilation_rate=(1,1), kernel_regularizer = None, 
-               kernel_initializer="glorot_uniform", conv_flag=True, bnflag=True,  relu=True, depthwise_separable=False, spatial_separable=False):
+               kernel_initializer="glorot_uniform", conv_flag=True, bnflag=True,  relu=True, depthwise_separable=False, spatial_separable=False, kernel_name="conv"+str(random.random())):
     
     super().__init__()
     
@@ -61,6 +62,8 @@ class ConvBnRl(tf.keras.Model):
     self.bn_flag = bnflag
     
     self.conv_flag = conv_flag
+    
+    print(filters,kernel_name, kernel_size, strides, padding, dilation_rate, kernel_regularizer, kernel_initializer)
     
     if depthwise_separable:
       
@@ -74,7 +77,7 @@ class ConvBnRl(tf.keras.Model):
     else:
       
       self.conv = tf.keras.layers.Conv2D(filters=filters, kernel_size=kernel_size, strides=strides, padding=padding, dilation_rate=dilation_rate,
-                                       kernel_regularizer=kernel_regularizer, kernel_initializer=kernel_initializer, use_bias=False)
+                                       kernel_regularizer=kernel_regularizer, kernel_initializer=kernel_initializer, use_bias=False, name=kernel_name)
     
     
     
@@ -390,7 +393,7 @@ class DenseNextBlk(tf.keras.Model):
               
               img_channel = self.conv_bn_3x3[i](root)#, [5, 1, 8, 8])
               
-              print(tf.shape(img_channel))
+              #print(tf.shape(img_channel))
               
               output_channels.append(img_channel)
               
@@ -407,7 +410,7 @@ class DenseNextBlk(tf.keras.Model):
           
           #sampling_dict = self.create_sampling_indices(self.z_dilation_rate, layer_shapes_dict)
           
-          #print(sampling_dict[0][0])
+          ##print(sampling_dict[0][0])
           
           output = self.convolve_on_samples(layers_dict)
           
@@ -469,8 +472,8 @@ class ZeeConvBlk(tf.keras.Model):
             for x in list(range(self.dimensions_dict["dimensions_to_sample"][0])):
                 
                 self.convolution_blocks[layer].append(
-                        ConvBnRl(filters=curr_filters, kernel_size=(3,3), strides=(1,1), padding="valid" , dilation_rate=self.dilation_rate, 
-                                      kernel_regularizer = self.kernel_regularizer, kernel_initializer=self.kernel_initializer, conv_flag=True, bnflag=True,  relu=True))
+                        ConvBnRl(filters=curr_filters, kernel_size=(3,3), strides=(1,1), padding="same" , dilation_rate=self.dilation_rate, 
+                                      kernel_regularizer = self.kernel_regularizer, kernel_initializer=self.kernel_initializer, conv_flag=True, bnflag=True,  relu=True, kernel_name=str(random.random())+"conv"))
 
         return
     
@@ -503,7 +506,6 @@ class ZeeConvBlk(tf.keras.Model):
         
         
         gather_indices = self._create_upsampling_indices(x.shape)
-        print("upsampling indices created")
         
         return tf.gather_nd(x, gather_indices)
         
@@ -529,9 +531,9 @@ class ZeeConvBlk(tf.keras.Model):
                 if down_up_strategy > 0:
                     x = self.pool(x)
                 else:
-                    print("upsampling")
+                    
                     x = self._upsample_by_replication(x, abs(down_up_strategy))
-                    print("upsampling done")
+                    
             
             sampled_layers_dict[layer_num] = x
             
@@ -570,15 +572,11 @@ class ZeeConvBlk(tf.keras.Model):
         
         for x_idx in range(num_x_pixels):
             
-            print("x xhannels:", x_idx)
-            
             #For each channel stich the layer outputs together
             
             stitched_image = None
             
             for layer_num in layers_dict.keys():
-                
-                print("layer_num:", layer_num)
                 
                 if downsampling_dict[layer_num] < 0:
                     #if upsamplinh then pick the previous x value because of memory management
@@ -589,38 +587,37 @@ class ZeeConvBlk(tf.keras.Model):
                 else:
                     channel = layers_dict[layer_num][:, x_idx, :, :]
                     
-                print(tf.shape(channel))
-                    
                 
                 channel = tf.reshape(channel, (channel.shape[0], 1, channel.shape[1], channel.shape[2]))
-                channel = tf.transpose(channel, [0, 3, 2, 1])#batch remains same, channels become x, y remains same, x becomes channels
                 
-                print(tf.shape(channel))
+                channel = tf.transpose(channel, [0, 3, 2, 1])#batch remains same, channels become x, y remains same, x becomes channels
                     
                 if stitched_image != None:
                     
                     stitched_image = tf.concat([stitched_image, channel], axis = 1)
                     
-                    print("stitched")
-                    
-                    print(tf.shape(stitched_image), "stitched image shape")
-                    
                 else:
                     
                     stitched_image = channel
                     
-                    print("stitched first time")
-                    
             #Once images are stiched, perform convolution
-            print("convolving")
+            
             conv_blk = self.convolution_blocks[0][x_idx]
-            print("convshape")
-            print(tf.shape(conv_blk(stitched_image)))
+            
             output_layers_dict[x_idx] = conv_blk(stitched_image)
         
         return output_layers_dict
     
     def apply_convolve_layers(self, channels_dict, num_layers):
+        
+        """
+        Takes a dictionary of channels.
+        Note that one layer of convolution in z direction is already done by transpose and convolve.
+        This does convolution on top of it's output
+        
+        Each key in this dictionary corresponds to multiple channels which are output of previous convs-one channel(in x axis of orig image) from the original image
+        
+        """
         
         output_layers_dict = channels_dict
         
@@ -638,30 +635,18 @@ class ZeeConvBlk(tf.keras.Model):
     
     def call(self, layers_dict, downsampling_dict = {0:1, 1:0, 2:-1}):
         
-        print("enter-z conv")
-        
         layers_dict_updown = self.set_down_up_sampling(layers_dict, downsampling_dict)
-        
-        print("updown done")
         
         x = self.transpose_and_convolve(layers_dict_updown, downsampling_dict)
         
-        print("transpose done")
-        
         x = self.apply_convolve_layers(x, (self.num_layers-1))
         
-        print("apply conv on layers")
-        
         output = tf.concat([v for (k, v) in x.items()], axis=3)
-        
-        print("concat done")
         
         if self.gap_mode == "x_axis":
             
             return output
         if self.gap_mode == "channel_axis":
-            
-            print("transpose")
             
             return tf.transpose(output, [0, 3, 2, 1])
         
