@@ -8,7 +8,7 @@ class ResNext_50(tf.keras.Model):
     super().__init__()
 
     
-    self.first_layer = ConvBnRl(filters=f_filter, kernel_size=(1,1), strides=(1,1), padding="same" , dilation_rate=(1,1), 
+    self.first_layer = ConvBnRl(filters=f_filter, kernel_size=(3,3), strides=(1,1), padding="same" , dilation_rate=(1,1), 
                                   kernel_regularizer = None, kernel_initializer='glorot_uniform', conv_flag=True, bnflag=True,  relu=True)
 
     self.blk1 = ResNeXtBlk(filters=f_filter, layer_num='1')
