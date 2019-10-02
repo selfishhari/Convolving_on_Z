@@ -24,52 +24,6 @@ os.chdir("/home/fractaluser/Personal/Narahari/eva_research/v2/eva_research_team4
 
 from importlib import reload
 
-import densenext#DenseNext
-
-reload(densenext)
-
-model = densenext.DenseNext()
-model(np.random.normal(size=(5,32,32,3)).astype(np.float16), 
-              np.array([1, 2, 1, 1, 1]))
-
-import model_blocks
-
-
-l1 = np.random.normal(size=(3,16, 16, 32)).astype(np.float16)
-
-l2 = np.random.normal(size=(3, 8, 8, 64)).astype(np.float16)
-
-l3 = np.random.normal(size=(3, 4, 4,128)).astype(np.float16)
-
-layers_dict = {0: l1, 1:l2, 2:l3}
-
-layers_dict = {0: l1, 1:l2}
-
-reload(model_blocks)
-
-zee_dense_blk = model_blocks.ZeeConvBlk(gap_mode="channel_axis")
-
-zee_block_output = zee_dense_blk(layers_dict)
-
-tf.shape(zee_block_output)
-
-import zeedensenet
-reload(model_blocks)
-reload(zeedensenet)
-model = zeedensenet.ZeeDenseNet(
-        dimensions_dict= {"dimensions_to_sample":(8,8)}, 
-        layers_filters={0:16, 1:32, 2:64}, 
-        gap_mode="channel_axis",
-        multisoft_list = [0,2]
-        )
-
-m_o = model(np.random.normal(size=(15,64,64,5)).astype(np.float16), 
-              np.array([1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1, 1, 1]))
-
-print(tf.shape(m_o[2]))
-
-m_o
-
 BATCH_SIZE = 3 #@param {type:"integer"}
 MOMENTUM = 0.95 #@param {type:"number"}
 
@@ -115,7 +69,7 @@ import data_pipeline
 
 reload(data_pipeline)
 
-data_pipeline.get_data(dataset_name = "CIFAR10", tfrecords_flag=True)
+#data_pipeline.get_data(dataset_name = "CIFAR10", tfrecords_flag=True)
 
 loaded_tfrecs = data_pipeline.load_tfrecords(params_tune["batch_size"])
 
@@ -161,7 +115,7 @@ def tst_data_supplier(epoch_num):
 def trn_data_supplier(epoch_num):
     
     batch_size = params_tune["batch_size"]
-  
+    
     global train_dataset
     
     len_train = 3
@@ -179,13 +133,19 @@ def trn_data_supplier(epoch_num):
 import run_util
 
 import zeedensenet
+import model_blocks
 reload(model_blocks)
 reload(zeedensenet)
 reload(run_util)
 
 from run_util import Run
 
-model = zeedensenet.ZeeDenseNet(f_filter=16, dimensions_dict= {"dimensions_to_sample":(8,8)}, layers_filters={0:4, 1:8})
+model = zeedensenet.ZeeDenseNet(f_filter=16, 
+                                dimensions_dict= {"dimensions_to_sample":(8,8)}, 
+                                layers_filters={0:32, 1:64, 2:128}, 
+                                roots_flag = True, 
+                                num_roots_dict={0:8,1:8,2:8}
+                                )
 
 
 obj = Run()
@@ -233,3 +193,50 @@ import all_models
 
 reload(all_models)
     
+
+
+import densenext#DenseNext
+
+reload(densenext)
+
+model = densenext.DenseNext()
+model(np.random.normal(size=(5,32,32,3)).astype(np.float16), 
+              np.array([1, 2, 1, 1, 1]))
+
+import model_blocks
+
+
+l1 = np.random.normal(size=(3,16, 16, 32)).astype(np.float16)
+
+l2 = np.random.normal(size=(3, 8, 8, 64)).astype(np.float16)
+
+l3 = np.random.normal(size=(3, 4, 4,128)).astype(np.float16)
+
+layers_dict = {0: l1, 1:l2, 2:l3}
+
+layers_dict = {0: l1, 1:l2}
+
+reload(model_blocks)
+
+zee_dense_blk = model_blocks.ZeeConvBlk(gap_mode="channel_axis", roots_flag=True)
+
+zee_block_output = zee_dense_blk(layers_dict)
+
+tf.shape(zee_block_output)
+
+import zeedensenet
+reload(model_blocks)
+reload(zeedensenet)
+model = zeedensenet.ZeeDenseNet(
+        dimensions_dict= {"dimensions_to_sample":(8,8)}, 
+        layers_filters={0:16, 1:32, 2:64}, 
+        gap_mode="channel_axis",
+        multisoft_list = [0,2]
+        )
+
+m_o = model(np.random.normal(size=(15,64,64,5)).astype(np.float16), 
+              np.array([1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1, 1, 1]))
+
+print(tf.shape(m_o[2]))
+
+m_o
