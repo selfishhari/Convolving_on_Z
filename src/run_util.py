@@ -248,6 +248,9 @@ class Run():
   def logger(self, params, run_vals, model, comment="", logfilepath= "../data/run_logger.csv"):
   
       dt = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+      
+      if "model" in params.keys():
+          del params["model"]
 
       params["runs"] = run_vals
 
@@ -278,7 +281,7 @@ class Run():
   ############___________LR FINDER______________###############
       
       
-  def lr_finder(self, model_class, trn_data_supplier, tst_data_supplier,
+  def lr_finder(self, trn_data_supplier, tst_data_supplier, model_class=None, model=None,
                 lr_list=[0.001, 0.003, 0.005, 0.007, 0.008, 0.009, 0.01, 0.015, 0.02,0.03, 0.04, 0.05, 0.08, 
                        0.1, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 2, 3,4, 5, 6, 7, 8, 9, 10],               
               train_num_batches = 5, test_num_batches = 3, add_cutout = True, break_loss_factor=5):
@@ -290,8 +293,13 @@ class Run():
       min_loss = 0
 
       #lr_list = np.interp(list(range(num_epochs)), [0, num_epochs], [0, .01])
-
-      model = model_class()
+      if model_class is None:
+          
+          model = model
+          
+      else:
+          
+          model = model_class()
 
       epoch_counter = 0
 
@@ -366,7 +374,7 @@ class Run():
   
   ############___________GRID SEARCH______________###############
   
-  def grid_search(self, model_fn, params_tune_grid, trn_data_supplier, tst_data_supplier, choose_on="test_acc"):
+  def grid_search(self, params_tune_grid, trn_data_supplier, tst_data_supplier, choose_on="test_acc"):
     
       def dict_product(dicts):
     
@@ -388,9 +396,16 @@ class Run():
       for params in dict_product(params_tune_grid):
 
         self.initialize_everything(params, trn_data_supplier, tst_data_supplier)
-
-        model_tuned, time, train_acc, test_acc, train_loss, test_loss = self.run(model_fn, params, trn_data_supplier, tst_data_supplier, verbose=False)
-
+        
+        model = params["model"]
+        
+        if model is None:
+            
+            model_tuned, time, train_acc, test_acc, train_loss, test_loss = self.run(params, trn_data_supplier, tst_data_supplier, verbose=False, model_fn=model_fn)
+            
+        else:            
+            model_tuned, time, train_acc, test_acc, train_loss, test_loss = self.run(params, trn_data_supplier, tst_data_supplier, verbose=False, model=model)
+            
         if choose_on == "test_acc":
 
           if(test_acc > min_val):
@@ -417,9 +432,15 @@ class Run():
 
   ############___________RUN______________###############
     
-  def run(self, model_fn, params, trn_data_supplier, tst_data_supplier, verbose=True):
+  def run(self, params, trn_data_supplier, tst_data_supplier,model=None, model_fn=None, verbose=True):
+      
+      if model_fn is None:
+          
+          model = model
     
-      model = model_fn()
+      else:
+          
+          model = model_fn()
       
       self.model = model
       
