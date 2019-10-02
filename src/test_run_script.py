@@ -24,6 +24,8 @@ os.chdir("/home/fractaluser/Personal/Narahari/eva_research/v2/eva_research_team4
 
 from importlib import reload
 
+from augmentation_utils import cutout
+
 BATCH_SIZE = 3 #@param {type:"integer"}
 MOMENTUM = 0.95 #@param {type:"number"}
 
@@ -98,6 +100,8 @@ def data_aug(x, y):
     
     x = tf.random_crop(x, [32, 32, 3])
     
+    x = cutout(x, train_mean)
+    
     return (x, y)
 
 def tst_data_supplier(epoch_num):
@@ -118,7 +122,7 @@ def trn_data_supplier(epoch_num):
     
     global train_dataset
     
-    len_train = 3
+    len_train = 10
 
     train_set = train_dataset.take(len_train).map(data_aug).batch(batch_size).prefetch(1)
     
@@ -127,7 +131,12 @@ def trn_data_supplier(epoch_num):
 
 #data_aug = lambda x, y: (tf.image.random_flip_left_right(tf.random_crop(x, [32, 32, 3])), y)
 
+#from matplotlib import pyplot as plt
+#its, lens =trn_data_supplier(0)
 
+#x, y = next(its.__iter__())
+
+#plt.imshow(x[3,:,:,:])
 
 
 import run_util
