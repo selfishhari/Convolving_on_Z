@@ -116,7 +116,7 @@ class ZeeDenseNet(tf.keras.Model):
     if 0 in self.multisoft_list:
         
         gap1, loss1 = self.get_softmax(y, 0, layer_dict= {0:blk1})
-        print(loss1)
+        #print(loss1)
         
     else:
         
