@@ -11,6 +11,7 @@ Original file is located at
 
 import tensorflow as tf
 import numpy as np
+import random
 
 class BatchNorm(tf.keras.Model):
   
@@ -52,7 +53,7 @@ class spatially_separable_conv(tf.keras.Model):
 class ConvBnRl(tf.keras.Model):
   
   def __init__(self, filters=32, kernel_size=(3,3), strides=(1,1), padding="same" , dilation_rate=(1,1), kernel_regularizer = None, 
-               kernel_initializer="glorot_uniform", conv_flag=True, bnflag=True,  relu=True, depthwise_separable=False, spatial_separable=False):
+               kernel_initializer="glorot_uniform", conv_flag=True, bnflag=True,  relu=True, depthwise_separable=False, spatial_separable=False, kernel_name="conv"+str(random.random())):
     
     super().__init__()
     
@@ -61,6 +62,8 @@ class ConvBnRl(tf.keras.Model):
     self.bn_flag = bnflag
     
     self.conv_flag = conv_flag
+    
+    print(filters,kernel_name, kernel_size, strides, padding, dilation_rate, kernel_regularizer, kernel_initializer)
     
     if depthwise_separable:
       
@@ -74,7 +77,7 @@ class ConvBnRl(tf.keras.Model):
     else:
       
       self.conv = tf.keras.layers.Conv2D(filters=filters, kernel_size=kernel_size, strides=strides, padding=padding, dilation_rate=dilation_rate,
-                                       kernel_regularizer=kernel_regularizer, kernel_initializer=kernel_initializer, use_bias=False)
+                                       kernel_regularizer=kernel_regularizer, kernel_initializer=kernel_initializer, use_bias=False, name=kernel_name)
     
     
     
@@ -407,7 +410,7 @@ class DenseNextBlk(tf.keras.Model):
           
           #sampling_dict = self.create_sampling_indices(self.z_dilation_rate, layer_shapes_dict)
           
-          #print(sampling_dict[0][0])
+          ##print(sampling_dict[0][0])
           
           output = self.convolve_on_samples(layers_dict)
           
@@ -430,9 +433,15 @@ class ZeeConvBlk(tf.keras.Model):
                  
                  dilation_rate = (2,2),
                  
+                 gap_mode="x_axis",
+                 
                  layers_filters = {0:16, 1:32, 2:64},
                  
-                 dimensions_dict = {"dimensions_to_sample":(16, 16)}
+                 dimensions_dict = {"dimensions_to_sample":(8, 8)},
+                 
+                 roots_flag = False,
+                 
+                 num_roots_dict = {0:8, 1:8, 2:8}
                  
                  ):
         
@@ -454,18 +463,37 @@ class ZeeConvBlk(tf.keras.Model):
         
         self.dimensions_dict = dimensions_dict
         
+        self.gap_mode = gap_mode
+        
+        self.roots_flag = roots_flag
+        
+        self.num_roots_dict = num_roots_dict
         
         for layer in range(self.num_layers):
             
-            self.convolution_blocks[layer] = []
-            
-            curr_filters = layers_filters[layer]
-            
-            for x in list(range(self.dimensions_dict["dimensions_to_sample"][0])):
+            if self.roots_flag == False:
                 
-                self.convolution_blocks[layer].append(
-                        ConvBnRl(filters=curr_filters, kernel_size=(3,3), strides=(1,1), padding="same" , dilation_rate=self.dilation_rate, 
-                                      kernel_regularizer = self.kernel_regularizer, kernel_initializer=self.kernel_initializer, conv_flag=True, bnflag=True,  relu=True))
+                curr_filters = layers_filters[layer]
+                
+                self.convolution_blocks[layer] = ConvBnRl(filters=curr_filters, kernel_size=(3,3), strides=(1,1), padding="same" , dilation_rate=self.dilation_rate, 
+                                      kernel_regularizer = self.kernel_regularizer, kernel_initializer=self.kernel_initializer, conv_flag=True, bnflag=True,  relu=True, kernel_name=str(random.random())+"conv")
+                
+            else:
+                
+                self.convolution_blocks[layer] = []
+                
+                curr_filters = layers_filters[layer]
+                
+                num_roots = num_roots_dict[layer]
+                
+                root_filters = curr_filters//num_roots
+                #self.root_group_strength = curr_filters//self.root_group_strength
+                
+                for x in list(range(num_roots)):
+                    
+                     self.convolution_blocks[layer].append(
+                            ConvBnRl(filters=root_filters, kernel_size=(3,3), strides=(1,1), padding="same" , dilation_rate=self.dilation_rate, 
+                                          kernel_regularizer = self.kernel_regularizer, kernel_initializer=self.kernel_initializer, conv_flag=True, bnflag=True,  relu=True, kernel_name=str(random.random())+"conv"))
 
         return
     
@@ -523,13 +551,15 @@ class ZeeConvBlk(tf.keras.Model):
                 if down_up_strategy > 0:
                     x = self.pool(x)
                 else:
+                    
                     x = self._upsample_by_replication(x, abs(down_up_strategy))
+                    
             
             sampled_layers_dict[layer_num] = x
             
         return sampled_layers_dict
     
-    def transpose_and_convolve(self, layers_dict, downsampling_dict):
+    def stitch_and_transpose(self, layers_dict, downsampling_dict):
         """
         Now that images x, y and channels are appropriately down/upsampled to the required extent.
         
@@ -556,9 +586,11 @@ class ZeeConvBlk(tf.keras.Model):
         
         """
         
-        output_layers_dict = {}
+        
         
         num_x_pixels = self.dimensions_dict["dimensions_to_sample"][0]#This will become channels for us
+        
+        transposed_img = None
         
         for x_idx in range(num_x_pixels):
             
@@ -577,43 +609,74 @@ class ZeeConvBlk(tf.keras.Model):
                 else:
                     channel = layers_dict[layer_num][:, x_idx, :, :]
                     
-                #print(tf.shape(channel))
-                    
                 
                 channel = tf.reshape(channel, (channel.shape[0], 1, channel.shape[1], channel.shape[2]))
-                channel = tf.transpose(channel, [0, 3, 2, 1])#batch remains same, channels become x, y remains same, x becomes channels
                 
-                #print(tf.shape(channel))
+                channel = tf.transpose(channel, [0, 3, 2, 1])#batch remains same, channels become x, y remains same, x becomes channels
                     
                 if stitched_image != None:
                     
                     stitched_image = tf.concat([stitched_image, channel], axis = 1)
                     
-                    #print(tf.shape(stitched_image), "stitched image shape")
-                    
                 else:
                     
                     stitched_image = channel
                     
-            #Once images are stiched, perform convolution
+            #Once images are stiched, concat them along the last axis
             
-            output_layers_dict[x_idx] = self.convolution_blocks[0][x_idx](stitched_image)
-        
-        return output_layers_dict
+            if transposed_img==None:
+                
+                transposed_img = stitched_image
+                
+            else:
+                
+                transposed_img = tf.concat([transposed_img, stitched_image], axis=3)
+                
+        return transposed_img
     
-    def apply_convolve_layers(self, channels_dict, num_layers):
+    def apply_convolutions(self, input_x, num_layers, roots, num_roots_dict = {0:8, 1:8, 2:8}):
         
-        output_layers_dict = channels_dict
+        """
+        Takes stitched and transposed image, if roots flag is true, then iterates through the channel axis and applies convollution on single channel.
+        Else, simply convolves on the entire image provided
+        """
         
-        for layer in range(num_layers):  
-
-            channels_dict =  output_layers_dict.copy()       
+        x = input_x
+        
+        if roots == True:
             
-            for (group, imgs) in channels_dict.items():
+            for layer in range(num_layers):  
                 
-                output_layers_dict[group] = self.convolution_blocks[(layer+1)][group](imgs)
+                layer_imgs = []
                 
-        return output_layers_dict
+                num_channels = int(tf.shape(x).numpy()[3])
+                
+                total_roots = num_roots_dict[layer]
+                
+                channes_per_root = num_channels//total_roots
+                
+                channel_num_start = 0
+                
+                channel_num_end = channel_num_start + channes_per_root
+    
+                for root in range(total_roots):
+                    
+                    img_root = x[:, :, :, channel_num_start:channel_num_end]
+                    
+                    channel_num_start = channel_num_end
+                    
+                    channel_num_end += channes_per_root
+                    
+                    layer_imgs.append(self.convolution_blocks[(layer)][root](img_root))
+                    
+                x = tf.concat(layer_imgs, axis = 3)
+                
+        else:
+            for layer in range(num_layers):
+                
+                x = self.convolution_blocks[layer](x)
+                
+        return x
             
         
     
@@ -621,10 +684,18 @@ class ZeeConvBlk(tf.keras.Model):
         
         layers_dict_updown = self.set_down_up_sampling(layers_dict, downsampling_dict)
         
-        x = self.transpose_and_convolve(layers_dict_updown, downsampling_dict)
+        x = self.stitch_and_transpose(layers_dict_updown, downsampling_dict)
         
-        x = self.apply_convolve_layers(x, (self.num_layers-1))
+        x = self.apply_convolutions(x, self.num_layers, roots=self.roots_flag, num_roots_dict = self.num_roots_dict)
         
-        output = tf.concat([v for (k, v) in x.items()], axis=3)
+        #output = tf.concat([v for (k, v) in x.items()], axis=3)
         
-        return output
+        if self.gap_mode == "x_axis":
+            
+            return x
+        if self.gap_mode == "channel_axis":
+            
+            return tf.transpose(x, [0, 3, 2, 1])
+        
+            
+        
