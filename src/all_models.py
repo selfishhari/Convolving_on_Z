@@ -47,11 +47,11 @@ class ResNext_50(tf.keras.Model):
 
 class DavidNet(tf.keras.Model):
   
-  def __init__(self, num_classes= 10, f_filter=64, weight=0.125):
+  def __init__(self, num_classes= 10, f_filter=32, weight=0.125):
     
     super().__init__()
     
-    self.init_conv_bn = ConvBnRl(filters=f_filter, kernel_size=(1,1), strides=(1,1), padding="same" , dilation_rate=(1,1), 
+    self.init_conv_bn = ConvBnRl(filters=f_filter, kernel_size=(3,3), strides=(1,1), padding="same" , dilation_rate=(1,1), 
                                   kernel_regularizer = None, kernel_initializer='glorot_uniform', conv_flag=True, bnflag=True,  relu=True)
     
     self.blk1 = ResBlk(cbr = ConvBnRl(filters=f_filter*2, kernel_size=(3,3), strides=(1,1), padding="same" , conv_flag=True, bnflag=True, relu=True),
