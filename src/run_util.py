@@ -27,6 +27,64 @@ def predict(model, img_list):
         predictions += [pred]
     
     return np.array(predictions)
+
+def early_inference_accuracy(model, test_dataset):
+    
+    (test_set, len_test) = test_dataset(0)
+    
+    infer_dict = {}
+    
+    first_batch_flag = True
+    
+    tf.keras.backend.set_learning_phase(0)
+    
+    test_loss = test_acc = 0
+    
+    for (x, y) in test_set:
+    
+              loss, correct, prob, multi_accuracies = model(x, y, infer_multi=True)
+    
+              test_loss += loss.numpy()
+    
+              test_acc += correct.numpy()
+              
+              for x in multi_accuracies.keys():
+                  
+                  if first_batch_flag:
+                      
+                      infer_dict[x] = {}
+                      
+                      infer_dict[x]["loss"] = multi_accuracies[x]["loss"].numpy()
+                      
+                      infer_dict[x]["acc"] = multi_accuracies[x]["acc"].numpy()
+                      
+                      infer_dict[x]["infer_time"] = multi_accuracies[x]["infer_time"]
+                      
+                  else:
+                      
+                      infer_dict[x]["loss"] += multi_accuracies[x]["loss"].numpy()
+                      
+                      infer_dict[x]["acc"] += multi_accuracies[x]["acc"].numpy()
+                      
+                      infer_dict[x]["infer_time"] += multi_accuracies[x]["infer_time"]
+
+              first_batch_flag = False
+              
+              
+    for x in infer_dict.keys():
+            
+        infer_dict[x]["loss"] /= len_test
+                          
+        infer_dict[x]["acc"] /= len_test
+                          
+        infer_dict[x]["infer_time"] /= len_test
+              
+    
+    df = pd.DataFrame(infer_dict).T.reset_index()
+    
+    df.columns = ["sm_level", "accuracy", "loss", "inference_time"]
+    
+    return df
         
 
 class Run():

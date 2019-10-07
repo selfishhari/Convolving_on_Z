@@ -153,13 +153,16 @@ model = zeedensenet.ZeeDenseNet(f_filter=16,
                                 dimensions_dict= {"dimensions_to_sample":(8,8)}, 
                                 layers_filters={0:32, 1:64, 2:128}, 
                                 roots_flag = True, 
-                                num_roots_dict={0:8,1:8,2:8}
+                                num_roots_dict={0:8,1:8,2:8},
+                                multisoft_list=[1,2]
                                 )
 
 
 obj = Run()
 
 x = obj.run( params_tune, trn_data_supplier, tst_data_supplier, model=model)
+
+run_util.early_inference_accuracy(model=obj.model, test_dataset = tst_data_supplier)
 
 
 model1 = zeedensenet.ZeeDenseNet(f_filter=2, dimensions_dict= {"dimensions_to_sample":(8,8)}, layers_filters={0:2})
@@ -249,3 +252,25 @@ m_o = model(np.random.normal(size=(15,64,64,5)).astype(np.float16),
 print(tf.shape(m_o[2]))
 
 m_o
+
+
+
+start_time = time.time()
+
+multi_accuracies = {}
+
+multi_accuracies["sm3"] = {}
+
+curr_time = time.time()
+
+multi_accuracies["sm3"]["loss"] = 2222
+
+multi_accuracies["sm3"]["infer_time"] = curr_time - start_time
+
+multi_accuracies["sm2"] = {}
+
+curr_time = time.time()
+
+multi_accuracies["sm2"]["loss"] = 2222
+
+multi_accuracies["sm2"]["infer_time"] = curr_time - start_time

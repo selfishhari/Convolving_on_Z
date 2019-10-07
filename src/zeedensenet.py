@@ -11,6 +11,7 @@ import model_blocks
 #reload(model_blocks)
 from model_blocks import *
 from model_blocks import ZeeConvBlk
+import time
 
 class ZeeDenseNet(tf.keras.Model):
     
@@ -111,9 +112,15 @@ class ZeeDenseNet(tf.keras.Model):
         return (gap, loss)
         
 
-  def call(self, x, y):
+  def call(self, x, y, infer_multi = False):
     
     #h = self.pool(self.blk3(self.blk2(self.blk1(self.init_conv_bn(x)))))
+    
+    start_time = time.time()
+    
+    if infer_multi == True:
+        
+        multi_accuracies = {}
     
     init_cbn = self.init_conv_bn(x)
     
@@ -122,11 +129,26 @@ class ZeeDenseNet(tf.keras.Model):
     if 0 in self.multisoft_list:
         
         gap1, loss1 = self.get_softmax(y, 0, layer_dict= {0:blk1})
+        
         #print(loss1)
+        
+        if infer_multi == True:
+            
+            multi_accuracies["sm1"] = {}
+        
+            multi_accuracies["sm1"]["acc"] = tf.reduce_sum(tf.cast(tf.math.equal(tf.argmax(gap1, axis = 1), y), tf.float16))
+            
+            curr_time = time.time()
+            
+            multi_accuracies["sm1"]["loss"] = loss1
+            
+            multi_accuracies["sm1"]["infer_time"] = curr_time - start_time
+            
+            multi_accuracies["sm1"]["prob"] = gap1
         
     else:
         
-        loss1 = tf.constant(0, dtype="float16")    
+        loss1 = tf.constant(0, dtype="float32")    
         
     blk2 = self.blk2(blk1)
     
@@ -134,9 +156,26 @@ class ZeeDenseNet(tf.keras.Model):
     
         gap2, loss2 = self.get_softmax(y, 1, layer_dict= {0:blk1, 1:blk2})
         
+        
+        
+        if infer_multi == True:
+            
+            multi_accuracies["sm2"] = {}
+        
+            multi_accuracies["sm2"]["acc"] = tf.reduce_sum(tf.cast(tf.math.equal(tf.argmax(gap2, axis = 1), y), tf.float16))
+            
+            curr_time = time.time()
+            
+            multi_accuracies["sm2"]["loss"] = loss2
+            
+            multi_accuracies["sm2"]["infer_time"] = curr_time - start_time
+            
+            multi_accuracies["sm2"]["prob"] = gap2
+        
+        
     else:
         
-        loss2 = tf.constant(0, dtype="float16")
+        loss2 = tf.constant(0, dtype="float32")
         
     
     
@@ -147,5 +186,23 @@ class ZeeDenseNet(tf.keras.Model):
     loss = tf.math.add_n([loss1 , 0.3 * loss2 , 0.3 * loss3])
     
     correct = tf.reduce_sum(tf.cast(tf.math.equal(tf.argmax(gap3, axis = 1), y), tf.float16))
+    
+    if infer_multi == True:
+        
+            multi_accuracies["sm3"] = {}
+            
+            multi_accuracies["sm3"]["acc"] = correct
+            
+            curr_time = time.time()
+    
+            multi_accuracies["sm3"]["loss"] = loss3
+                    
+            multi_accuracies["sm3"]["infer_time"] = curr_time - start_time
+            
+            multi_accuracies["sm3"]["prob"] = gap3
+        
+    if infer_multi == True:
+        
+            return loss, correct, gap3, multi_accuracies
     
     return loss, correct, gap3
