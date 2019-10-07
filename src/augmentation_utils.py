@@ -11,69 +11,31 @@ def horizontal_flip(x: tf.Tensor):
 
 	
 ### Cutout
-def replace_slice(input_: tf.Tensor, replacement, begin):
+def replace_slice(input_: tf.Tensor, replacement, begin) -> tf.Tensor:
     inp_shape = tf.shape(input_)
     size = tf.shape(replacement)
     padding = tf.stack([begin, inp_shape - (begin + size)], axis=1)
     replacement_pad = tf.pad(replacement, padding)
+#     replacement_pad = tf.cast(replacement_pad, dtype=tf.float16)
     mask = tf.pad(tf.ones_like(replacement, dtype=tf.bool), padding)
     return tf.where(mask, replacement_pad, input_)
 
-def cutout(img,train_mean, prob=5,size=8,min_size=5,use_fixed_size=False):
-  return tf.cond(tf.random.uniform([], 0, 100) > prob, lambda: img , lambda: get_cutout(img, train_mean, prob,size,min_size,use_fixed_size))
-
-
-
-def get_cutout(img,train_mean,prob=50,size=16,min_size=5,use_fixed_size=False):
-  
-  
-  height = tf.shape(img)[0]
-  width = tf.shape(img)[1]
-  channel = tf.shape(img)[2]
-  
-  #subtract the mean of train dataset from the image , we will add this back later 
-  mean = tf.constant(train_mean, dtype=tf.float32) # (3)
-  mean = tf.reshape(mean, [1, 1, 3])
-  img_m = img - mean
-
-  #get cutout size and offsets 
-  if (use_fixed_size==True):
-    s=size
-  else:  
-    s=tf.random.uniform([], min_size, size, tf.int32) # use a cutout size between 5 and size 
-
-  x1 = tf.random.uniform([], 0, height+1 - s, tf.int32) # get the x offset from top left
-  y1 = tf.random.uniform([], 0, width+1 - s, tf.int32) # get the y offset from top left 
-
-  # create the cutout slice and the mask 
-  img1 = tf.ones_like(img)  
-  
-  cut_slice = tf.slice(
-  img1,
-  [x1, y1, 0],
-  [s, s, 3]
-     )
-  #create mask similar in shape to input image with cutout area having ones and rest of the area padded with zeros 
-  mask = tf.image.pad_to_bounding_box(
-    [cut_slice],
-    x1,
-    y1,
-    height,
-    width
-  )
-  
-  #invert the zeros and ones 
-  mask = tf.ones_like(mask ) - mask
-  
-  #inv_mask = tf.where( tf.equal( -1.0, mask ), 1.0 * tf.ones_like( mask ), mask ) # not needed
-  
-  #apply cutout on the image , get back a shape of [1,32,32,3] instead of [32,32,3]
-  tmp_img = tf.multiply(img_m,mask)
-
-  #add back the mean that we subtracted 
-  cut_img = tmp_img[0] + mean
-  
-  return cut_img
+def cutout(x: tf.Tensor, h: int=8, w: int=8, c: int = 3) -> tf.Tensor:
+    """
+    Cutout data augmentation. Randomly cuts a h by w whole in the image, and fill the whole with zeros.
+    :param x: Input image.
+    :param h: Height of the hole.
+    :param w: Width of the hole
+    :param c: Number of color channels in the image. Default: 3 (RGB).
+    :return: Transformed image.
+    """
+    shape = tf.shape(x)
+    x0 = tf.random.uniform([], 0, shape[0] + 1 - h, dtype=tf.int32)
+    y0 = tf.random.uniform([], 0, shape[1] + 1 - w, dtype=tf.int32)
+    
+    x = replace_slice(x, tf.zeros([h, w, c], dtype = tf.float32), [x0, y0, 0])
+#     x = replace_slice(x, tf.constant(1,shape = [h,w,c],dtype = tf.float16)*train_mean, [x0, y0, 0])
+    return x
 
 ### Rotate 90
 def random_rotate_90(x: tf.Tensor):

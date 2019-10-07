@@ -26,6 +26,7 @@ from importlib import reload
 
 from augmentation_utils import cutout
 
+
 BATCH_SIZE = 3 #@param {type:"integer"}
 MOMENTUM = 0.95 #@param {type:"number"}
 
@@ -86,21 +87,26 @@ train_std= np.array([62.99321928, 62.08870764, 66.70489964])
 
 normalize = lambda x: ((x - train_mean) / train_std)
 
+import augmentation_utils
+reload(augmentation_utils)
+
+from augmentation_utils import cutout
+
 def data_aug(x, y):
     
     #x = tf.image.per_image_standardization(x)
     
     x = normalize(x)
-        
-    x = tf.image.random_flip_left_right(x)
-    
+
     paddings = [(4, 4), (4, 4), (0, 0)]
     
     x = tf.pad(x, paddings, "REFLECT")
     
     x = tf.random_crop(x, [32, 32, 3])
     
-    x = cutout(x, train_mean)
+    x = tf.image.random_flip_left_right(x)
+    
+    x = cutout(x)
     
     return (x, y)
 
