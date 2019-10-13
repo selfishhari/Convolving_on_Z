@@ -3,7 +3,7 @@
 """
 Created on Thu Sep 19 13:59:01 2019
 
-@author: fractaluser
+@author: narahari b m
 """
 
 import numpy as np
@@ -27,7 +27,7 @@ from importlib import reload
 from augmentation_utils import cutout
 
 
-BATCH_SIZE = 3 #@param {type:"integer"}
+BATCH_SIZE = 10 #@param {type:"integer"}
 MOMENTUM = 0.95 #@param {type:"number"}
 
 MIN_MOMENTUM = 0.8 #@param {type:"number"}
@@ -90,7 +90,7 @@ normalize = lambda x: ((x - train_mean) / train_std)
 import augmentation_utils
 reload(augmentation_utils)
 
-from augmentation_utils import cutout
+#from augmentation_utils import cutout
 
 def data_aug(x, y):
     
@@ -116,7 +116,7 @@ def tst_data_supplier(epoch_num):
     
     global eval_dataset
   
-    len_test = 3
+    len_test = 30
 
     test_set = eval_dataset.take(len_test).map(data_aug).batch(batch_size).prefetch(1)
     
@@ -128,7 +128,7 @@ def trn_data_supplier(epoch_num):
     
     global train_dataset
     
-    len_train = 10
+    len_train = 1000
 
     train_set = train_dataset.take(len_train).map(data_aug).batch(batch_size).prefetch(1)
     
@@ -160,7 +160,7 @@ model = zeedensenet.ZeeDenseNet(f_filter=16,
                                 layers_filters={0:32, 1:64, 2:128}, 
                                 roots_flag = True, 
                                 num_roots_dict={0:8,1:8,2:8},
-                                multisoft_list=[1,2]
+                                multisoft_list=[0, 1,2]
                                 )
 
 
@@ -170,6 +170,41 @@ x = obj.run( params_tune, trn_data_supplier, tst_data_supplier, model=model)
 
 run_util.early_inference_accuracy(model=obj.model, test_dataset = tst_data_supplier)
 
+import visual_utils
+reload(visual_utils)
+    
+#diff_df = visual_utils._get_batch_difference_df(obj.model, imgs, ys).reset_index(drop=True)
+
+diff_df = visual_utils.grab_different_imgs(obj.model, trn_data_supplier)
+
+class_names = ['airplane','automobile','bird','cat','deer',
+               'dog','frog','horse','ship','truck']
+
+visual_utils.plot_diff(diff_df, denormalize=True)
+
+visual_utils.plot_diff(diff_df,
+                       sm_col="sm1_correct", main_col="sm3_correct",
+                       img_col="imgs",
+              true_col="ys", 
+              pred_col="sm1_class",
+              pred_col2="sm3_class",
+              prob_col1="sm1_probs",
+              prob_col2="sm3_probs",
+              ncols=2,
+              denormalize=True)
+
+
+visual_utils.classwise_display(df=diff_df, img_col="imgs", 
+                               true_col="ys", pred_col="sm2_class", 
+                               ncols=5, class_map=class_names)
+
+
+from matplotlib import pyplot as plt
+
+plt.imshow(diff_df["imgs"][0].astype(np.uint8))
+
+
+##################################################
 
 model1 = zeedensenet.ZeeDenseNet(f_filter=2, dimensions_dict= {"dimensions_to_sample":(8,8)}, layers_filters={0:2})
 
@@ -261,22 +296,16 @@ m_o
 
 
 
-start_time = time.time()
 
-multi_accuracies = {}
+from matplotlib import pyplot as plt
 
-multi_accuracies["sm3"] = {}
 
-curr_time = time.time()
+x, y = next(trn_data_supplier(0)[0].__iter__())
 
-multi_accuracies["sm3"]["loss"] = 2222
+img = x[0, :, :, :]
 
-multi_accuracies["sm3"]["infer_time"] = curr_time - start_time
+plt.imshow(img.numpy().astype(np.uint8))
 
-multi_accuracies["sm2"] = {}
+from matplotlib import pyplot as plt
 
-curr_time = time.time()
-
-multi_accuracies["sm2"]["loss"] = 2222
-
-multi_accuracies["sm2"]["infer_time"] = curr_time - start_time
+plt.imshow(diff_df["imgs"][3].astype(np.uint8))
