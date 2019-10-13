@@ -180,6 +180,10 @@ diff_df = visual_utils.grab_different_imgs(obj.model, trn_data_supplier)
 class_names = ['airplane','automobile','bird','cat','deer',
                'dog','frog','horse','ship','truck']
 
+import warnings
+
+warnings.filterwarnings("ignore")
+
 visual_utils.plot_diff(diff_df, denormalize=True)
 
 visual_utils.plot_diff(diff_df,
@@ -190,7 +194,7 @@ visual_utils.plot_diff(diff_df,
               pred_col2="sm3_class",
               prob_col1="sm1_probs",
               prob_col2="sm3_probs",
-              ncols=2,
+              ncols=7,
               denormalize=True)
 
 

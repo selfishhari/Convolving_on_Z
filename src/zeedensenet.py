@@ -144,7 +144,7 @@ class ZeeDenseNet(tf.keras.Model):
             
             multi_accuracies["sm1"]["infer_time"] = curr_time - start_time
             
-            multi_accuracies["sm1"]["prob"] = gap1
+            multi_accuracies["sm1"]["prob"] = tf.nn.softmax(gap1, axis = 1)
         
     else:
         
@@ -170,7 +170,7 @@ class ZeeDenseNet(tf.keras.Model):
             
             multi_accuracies["sm2"]["infer_time"] = curr_time - start_time
             
-            multi_accuracies["sm2"]["prob"] = gap2
+            multi_accuracies["sm2"]["prob"] = tf.nn.softmax(gap2, axis=1)
         
         
     else:
@@ -199,7 +199,7 @@ class ZeeDenseNet(tf.keras.Model):
                     
             multi_accuracies["sm3"]["infer_time"] = curr_time - start_time
             
-            multi_accuracies["sm3"]["prob"] = gap3
+            multi_accuracies["sm3"]["prob"] = tf.nn.softmax(gap3, axis=1)
         
     if infer_multi == True:
         

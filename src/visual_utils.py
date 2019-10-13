@@ -163,16 +163,40 @@ def image_gallary(no_of_image, img, img_lbl,
                   prob2=None,
                   denormalize=False,
                   train_std=np.array([62.99321928, 62.08870764, 66.70489964]),
-                  train_mean = np.array([125.30691805, 122.95039414, 113.86538318])):
+                  train_mean = np.array([125.30691805, 122.95039414, 113.86538318]),
+                  NUM_IMAGES_IN_ROW=5):
+    
+    
+    
+  
+  
+  if NUM_IMAGES_IN_ROW <= 5:
+      
+      fig_x = 12
+      
+      fig_y = 12
+      
+  else:
+      
+      fig_x = NUM_IMAGES_IN_ROW * 12 / 5
+      
+      fig_y = NUM_IMAGES_IN_ROW * 12 / 5
+  
+  
   #no_of_image: give no of image as multiple of 5
-  if no_of_image<5:
+  if no_of_image<NUM_IMAGES_IN_ROW:
     row = 1
     col = no_of_image
+    
+    fig_x = fig_x * no_of_image / NUM_IMAGES_IN_ROW
+    
+    fig_y = fig_y * no_of_image / NUM_IMAGES_IN_ROW
   else:
-    row = no_of_image//5
-    col = 5
-
-  fig=plt.figure(figsize=(12,12))
+    row = no_of_image//NUM_IMAGES_IN_ROW
+    col = NUM_IMAGES_IN_ROW
+  
+  
+  fig=plt.figure(figsize=(fig_x, fig_y))
   
   denormalize_fn = lambda x: ((x * train_std) + train_mean)
   
@@ -391,9 +415,16 @@ def plot_diff(df, sm_col="sm2_correct", main_col="sm3_correct",
     class_names = ['airplane','automobile','bird','cat','deer',
                'dog','frog','horse','ship','truck']
     
+    #Take only those rows where there is a difference
+    
     sub_df = df.loc[df[main_col] != df[sm_col], :].reset_index(drop=True)
     
-    classwise_display(sub_df, 
+    #Separate where main layer is correct but not the sm layer, and vice-versa
+    sub_df_main_correct = sub_df.loc[sub_df[main_col],:].reset_index(drop=True)
+    
+    sub_df_sm_correct = sub_df.loc[sub_df[sm_col],:].reset_index(drop=True)
+    
+    classwise_display([sub_df_main_correct, sub_df_sm_correct], 
                       img_col=img_col,
                       true_col=true_col, 
                       pred_col=pred_col, 
@@ -406,7 +437,7 @@ def plot_diff(df, sm_col="sm2_correct", main_col="sm3_correct",
     
     
 
-def classwise_display(df, img_col, true_col, pred_col, 
+def classwise_display(df_list, img_col, true_col, pred_col, 
                       ncols=5,
                       class_map=None,
                       pred_col2=None,
@@ -414,41 +445,76 @@ def classwise_display(df, img_col, true_col, pred_col,
                       prob_col2=None,
                       denormalize=False):
     
-    all_classes = df.loc[:, true_col].unique()
+    """
+    Plots images in a grid class wise. Loops over each class in the df provided and plots
+    
+    Inputs:
+        df_list - pandas DataFrame list, that has image array(numpy),truelabel, predicted label, etc..(refer other arguments)
+        All dfs in the list must have similar structure(same column names and the format of values in them)
+        
+        img_col - column name of numpy array images
+        
+        true_col - column containing ground truth labels
+        
+        pred_col - column containing predicted labels
+        
+        ncols - number of images to display in a row
+        
+        class_map(required) - A list label names to be used to map the label numbers in true label and predicted label columns
+        
+        pred_col2(optional) - second predicted label column name
+        
+        prob_col1, prob_col2 (optional)- column names having probability values
+        
+        denormalize - Flag to denormalize image
+    """
+    
+    all_classes = df_list[0].loc[:, true_col].unique()
     
     for clss in all_classes:
         
-        sub_df = df.loc[df[true_col]==clss, :].reset_index(drop=True)
-        
-        sub_df = sub_df.loc[list(range(ncols)),:].dropna()
-        
-        preds_mapped = [class_map[x] for x in sub_df.loc[:,pred_col].astype(int).tolist()]
-        
-        true_mapped = [class_map[x] for x in sub_df.loc[:,true_col].astype(int).tolist()]
-        
-        if pred_col2==None:
-            preds_mapped2 = None
-        else:
-            preds_mapped2 = [class_map[x] for x in sub_df.loc[:,pred_col2].astype(int).tolist()]
+        for df in df_list:
             
-        if prob_col1==None:
-            prob1 = None
-        else:
-            prob1 = sub_df.loc[:,prob_col1].tolist()
+            sub_df = df.loc[df[true_col]==clss, :].reset_index(drop=True)
             
-        if prob_col2==None:
-            prob2 = None
-        else:
-            prob2 = sub_df.loc[:,prob_col2].tolist()
-        
-        image_gallary(no_of_image = sub_df.shape[0], 
-                      img = sub_df.loc[:,img_col].tolist(), 
-                      img_lbl = true_mapped, 
-                      pred_lbl = preds_mapped,
-                      pred_lbl2=preds_mapped2,
-                      prob1=prob1,
-                      prob2=prob2,
-                      denormalize=denormalize)
+            print("\nClass: {}".format(class_map[clss])+"\n")
+            
+            if sub_df.shape[0] < 1:
+                
+                print("\n----NO IMAGES AVAIABLE FOR THIS SECTION-----")
+                
+                continue
+            
+            sub_df = sub_df.loc[list(range(ncols)),:].dropna()
+            
+            preds_mapped = [class_map[x] for x in sub_df.loc[:,pred_col].astype(int).tolist()]
+            
+            true_mapped = [class_map[x] for x in sub_df.loc[:,true_col].astype(int).tolist()]
+            
+            if pred_col2==None:
+                preds_mapped2 = None
+            else:
+                preds_mapped2 = [class_map[x] for x in sub_df.loc[:,pred_col2].astype(int).tolist()]
+                
+            if prob_col1==None:
+                prob1 = None
+            else:
+                prob1 = sub_df.loc[:,prob_col1].tolist()
+                
+            if prob_col2==None:
+                prob2 = None
+            else:
+                prob2 = sub_df.loc[:,prob_col2].tolist()
+            
+            image_gallary(no_of_image = sub_df.shape[0], 
+                          img = sub_df.loc[:,img_col].tolist(), 
+                          img_lbl = true_mapped, 
+                          pred_lbl = preds_mapped,
+                          pred_lbl2=preds_mapped2,
+                          prob1=prob1,
+                          prob2=prob2,
+                          denormalize=denormalize,
+                          NUM_IMAGES_IN_ROW = ncols)
     
     
     return
