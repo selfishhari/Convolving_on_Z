@@ -518,3 +518,43 @@ def classwise_display(df_list, img_col, true_col, pred_col,
     
     
     return
+
+def plot_good_and_worst(df, sm_col="sm2_correct",
+              img_col="imgs",
+              true_col="ys", 
+              pred_col="sm2_class",
+              prob_col="sm2_probs",
+              ncols=5,
+              denormalize=False,
+              CLASSWISE_SELECT_TOP_IMAGES = 20
+              ):
+    """
+    This function plots images which were classified correctly with high conf and classified wrong with high confidence(of being correct)
+    
+    takes diff_df, main_col = sm3 class column, sm_col = smoftmax inconsideration column
+    """
+    
+    class_names = ['airplane','automobile','bird','cat','deer',
+               'dog','frog','horse','ship','truck']
+    
+    #Take only those rows where there is a difference
+    
+    correct_df = df.loc[df[sm_col], :]
+    
+    high_conf_correct_df = correct_df.sort_values([pred_col, prob_col], ascending=False).groupby(pred_col).head(CLASSWISE_SELECT_TOP_IMAGES)
+    
+    incorrect_df = df.loc[~(df[sm_col]), :]
+    
+    high_conf_incorrect_df = incorrect_df.sort_values([pred_col, prob_col], ascending=True).groupby(pred_col).head(CLASSWISE_SELECT_TOP_IMAGES)
+    
+    print(high_conf_incorrect_df.shape, high_conf_correct_df.shape)
+    
+    classwise_display([high_conf_correct_df, high_conf_incorrect_df], 
+                      img_col=img_col,
+                      true_col=true_col, 
+                      pred_col=pred_col,
+                      pred_col2=pred_col,
+                      prob_col1=prob_col,
+                      ncols=ncols, 
+                      class_map=class_names,
+                      denormalize=denormalize)

@@ -194,13 +194,22 @@ visual_utils.plot_diff(diff_df,
               pred_col2="sm3_class",
               prob_col1="sm1_probs",
               prob_col2="sm3_probs",
-              ncols=7,
+              ncols=10,
               denormalize=True)
 
 
 visual_utils.classwise_display(df=diff_df, img_col="imgs", 
                                true_col="ys", pred_col="sm2_class", 
                                ncols=5, class_map=class_names)
+
+visual_utils.plot_good_and_worst(df=diff_df, sm_col="sm2_correct",
+              img_col="imgs",
+              true_col="ys", 
+              pred_col="sm2_class",
+              prob_col="sm2_probs",
+              ncols=5,
+              denormalize=True,
+              CLASSWISE_SELECT_TOP_IMAGES = 0.7)
 
 
 from matplotlib import pyplot as plt
