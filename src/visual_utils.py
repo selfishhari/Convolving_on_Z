@@ -284,7 +284,7 @@ def  gradCAM_galary_set(no_of_image, class_names, image_set, img_lbl, img_index,
     j+=1
   plt.show()
   
-def _get_batch_difference_df(model, imgs, ys):
+def _get_batch_difference_df(model, imgs, ys, difference=True):
     
     """
     This function takes images and it's true labels.
@@ -332,8 +332,14 @@ def _get_batch_difference_df(model, imgs, ys):
         
         temp_df["sm1_correct"] = temp_df.ys == temp_df.sm1_class
         
-        temp_df["subset"] = (temp_df.sm1_correct != temp_df.sm3_correct) | (temp_df["subset"])
-        
+        if difference:
+            
+            temp_df["subset"] = (temp_df.sm1_correct != temp_df.sm3_correct) | (temp_df["subset"])
+            
+        else:
+            
+            temp_df["subset"] = True
+            
         ##print("got sm1 set")
         
     if "sm2" in multi_accuracies.keys():
@@ -350,7 +356,13 @@ def _get_batch_difference_df(model, imgs, ys):
         
         temp_df["sm2_correct"] = temp_df.ys == temp_df.sm2_class
         
-        temp_df["subset"] = (temp_df.sm2_correct != temp_df.sm3_correct) | (temp_df["subset"])
+        if difference:
+            
+            temp_df["subset"] = (temp_df.sm2_correct != temp_df.sm3_correct) | (temp_df["subset"])
+            
+        else:
+            
+            temp_df["subset"] = True
         
         ##print("got sm2 set")
         
@@ -365,14 +377,17 @@ def _get_batch_difference_df(model, imgs, ys):
         
     ##print("got images set")
     
-    temp_df = temp_df.loc[temp_df["subset"], :]
-    
+        
+    if difference:
+            
+        temp_df = temp_df.loc[temp_df["subset"], :]
+        
     temp_df["imgs"] = all_imgs
     #"""
     
     return temp_df
 
-def grab_different_imgs(model, dataset_supplier):
+def grab_different_imgs(model, dataset_supplier, difference=True):
     
     (data_set, len_data) = dataset_supplier(0)
     
@@ -380,7 +395,7 @@ def grab_different_imgs(model, dataset_supplier):
     
     for (imgs, ys) in data_set:
         
-        curr_df = _get_batch_difference_df(model, imgs, ys)
+        curr_df = _get_batch_difference_df(model, imgs, ys, difference)
         
         if flag_first_batch==1:
             
@@ -443,7 +458,8 @@ def classwise_display(df_list, img_col, true_col, pred_col,
                       pred_col2=None,
                       prob_col1=None,
                       prob_col2=None,
-                      denormalize=False):
+                      denormalize=False,
+                      message_list = None):
     
     """
     Plots images in a grid class wise. Loops over each class in the df provided and plots
@@ -471,13 +487,22 @@ def classwise_display(df_list, img_col, true_col, pred_col,
     
     all_classes = df_list[0].loc[:, true_col].unique()
     
+    if message_list == None:
+        
+        message_list = [""]* len(df_list)
+    
     for clss in all_classes:
+        
+        df_counter = 0
         
         for df in df_list:
             
             sub_df = df.loc[df[true_col]==clss, :].reset_index(drop=True)
             
-            print("\nClass: {}".format(class_map[clss])+"\n")
+            print("\nClass: {}-{}".format(class_map[clss], 
+                  message_list[df_counter % len(df_list) ])+"\n")
+            
+            df_counter += 1
             
             if sub_df.shape[0] < 1:
                 
@@ -557,4 +582,5 @@ def plot_good_and_worst(df, sm_col="sm2_correct",
                       prob_col1=prob_col,
                       ncols=ncols, 
                       class_map=class_names,
-                      denormalize=denormalize)
+                      denormalize=denormalize,
+                      message_list = ["Correct with high confidence", "Incorrect with high confidence"])

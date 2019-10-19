@@ -177,6 +177,8 @@ reload(visual_utils)
 
 diff_df = visual_utils.grab_different_imgs(obj.model, trn_data_supplier)
 
+all_df = visual_utils.grab_different_imgs(obj.model, trn_data_supplier, difference=False)
+
 class_names = ['airplane','automobile','bird','cat','deer',
                'dog','frog','horse','ship','truck']
 
@@ -202,14 +204,14 @@ visual_utils.classwise_display(df=diff_df, img_col="imgs",
                                true_col="ys", pred_col="sm2_class", 
                                ncols=5, class_map=class_names)
 
-visual_utils.plot_good_and_worst(df=diff_df, sm_col="sm2_correct",
+visual_utils.plot_good_and_worst(df=all_df, sm_col="sm2_correct",
               img_col="imgs",
               true_col="ys", 
               pred_col="sm2_class",
               prob_col="sm2_probs",
-              ncols=5,
+              ncols=10,
               denormalize=True,
-              CLASSWISE_SELECT_TOP_IMAGES = 0.7)
+              CLASSWISE_SELECT_TOP_IMAGES = 10)
 
 
 from matplotlib import pyplot as plt
