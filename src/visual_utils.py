@@ -580,7 +580,7 @@ def plot_good_and_worst(df, sm_col="sm2_correct",
     
     incorrect_df = df.loc[~(df[sm_col]), :]
     
-    high_conf_incorrect_df = incorrect_df.sort_values([pred_col, prob_col], ascending=True).groupby(pred_col).head(CLASSWISE_SELECT_TOP_IMAGES*20)
+    high_conf_incorrect_df = incorrect_df.sort_values([pred_col, prob_col], ascending=False).groupby(pred_col).head(CLASSWISE_SELECT_TOP_IMAGES*20)
     
     print(high_conf_incorrect_df.shape, high_conf_correct_df.shape)
     
