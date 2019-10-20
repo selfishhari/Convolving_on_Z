@@ -5,8 +5,9 @@ from keras.preprocessing import image
 import numpy as np
 import cv2
 from keras import backend as K
-
+from sklearn.metrics import confusion_matrix
 from matplotlib import pyplot as plt
+import seaborn as sn
 import run_util
 import pandas as pd
 
@@ -586,3 +587,21 @@ def plot_good_and_worst(df, sm_col="sm2_correct",
                       class_map=class_names,
                       denormalize=denormalize,
                       message_list = ["Correct with high confidence", "Incorrect with high confidence"])
+    
+
+
+
+def plot_cm(all_y, all_preds, class_names=['airplane','automobile','bird','cat', 'deer','dog','frog','horse','ship','truck']):
+    
+    cm = confusion_matrix(all_y, all_preds)
+    
+    df_cm = pd.DataFrame(cm, index = [i for i in class_names],
+                  columns = [i for i in class_names])
+    
+    plt.figure(figsize = (10,7))
+    
+    sn.heatmap(df_cm, annot=True)
+    
+    plt.show()
+    
+    return

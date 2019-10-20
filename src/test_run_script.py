@@ -214,6 +214,8 @@ visual_utils.plot_good_and_worst(df=all_df, sm_col="sm2_correct",
               CLASSWISE_SELECT_TOP_IMAGES = 10)
 
 
+visual_utils.plot_cm(all_df.ys, all_df.sm1_class)
+
 from matplotlib import pyplot as plt
 
 plt.imshow(diff_df["imgs"][0].astype(np.uint8))
