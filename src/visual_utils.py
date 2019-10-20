@@ -500,6 +500,8 @@ def classwise_display(df_list, img_col, true_col, pred_col,
         
         for df in df_list:
             
+            print(sum(df[true_col]==clss))
+            
             sub_df = df.loc[df[true_col]==clss, :].reset_index(drop=True)
             
             print("\nClass: {}-{}".format(class_map[clss], 
