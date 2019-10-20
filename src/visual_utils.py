@@ -512,8 +512,13 @@ def classwise_display(df_list, img_col, true_col, pred_col,
                 print("\n----NO IMAGES AVAIABLE FOR THIS SECTION-----")
                 
                 continue
+            print(sub_df.shape)
             
             sub_df = sub_df.loc[list(range(ncols)),:].dropna()
+            
+            print(sub_df.shape)
+            
+            
             
             preds_mapped = [class_map[x] for x in sub_df.loc[:,pred_col].astype(int).tolist()]
             
