@@ -27,6 +27,12 @@
   
   ## Multisoftmax:
   87%
+  Most updated notebook with visualizations:(87% just multisoftmax, voting accuracy-94%)
+  https://github.com/selfishhari/eva_research_team4/blob/zeedense/notebooks/zeedensenext_multisoft_501kparams_xaxis_noroots_withviz.ipynb
+  ### Voting accuracy:
+  Calculated by taking mode of predictions from different softmax layers. If all 3 gave different class softmax3 output is taken.
+  Accuracy calculated by this approach gave a 7% lift.
+  87%
   https://github.com/selfishhari/eva_research_team4/blob/master/notebooks/testing_model_api_zeedensenext_multisoft_7M_xaxis_roots.ipynb
   
   
