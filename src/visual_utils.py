@@ -160,8 +160,10 @@ def image_reconstract(x):
 def image_gallary(no_of_image, img, img_lbl, 
                   pred_lbl = None,
                   pred_lbl2=None,
+                  pred_lbl3=None,
                   prob1=None,
                   prob2=None,
+                  prob3=None,
                   denormalize=False,
                   train_std=np.array([62.99321928, 62.08870764, 66.70489964]),
                   train_mean = np.array([125.30691805, 122.95039414, 113.86538318]),
@@ -228,12 +230,21 @@ def image_gallary(no_of_image, img, img_lbl,
                   '\n Predicted2: '+str(pred_lbl2[i])+
                   '\n Prob1: {0:.2f}'.format(prob1[i]))
         
-    else:
+    elif prob3 == None:
         plt.title('Actual: '+str(img_lbl[i])+
                   '\n Predicted1: '+str(pred_lbl[i])+
                   '\n Predicted2: '+str(pred_lbl2[i])+
                   '\n Prob1: {0:.2f}'.format(prob1[i])+
                   '\n Prob2: {0:.2f}'.format(prob2[i]))
+    else:
+        plt.title('Actual: '+str(img_lbl[i])+
+                  '\n Predicted1: '+str(pred_lbl[i])+
+                  '\n Predicted2: '+str(pred_lbl2[i])+
+                  '\n Predicted3: '+str(pred_lbl3[i])+
+                  '\n Prob1: {0:.2f}'.format(prob1[i])+
+                  '\n Prob2: {0:.2f}'.format(prob2[i])+
+                  '\n Prob3: {0:.2f}'.format(prob3[i]))
+        
         
         
     plt.xticks([])
@@ -415,12 +426,16 @@ def grab_different_imgs(model, dataset_supplier, difference=True):
 def plot_diff(df, sm_col="sm2_correct", main_col="sm3_correct",
               img_col="imgs",
               true_col="ys", 
-              pred_col="sm2_class",
-              pred_col2="sm3_class",
-              prob_col1="sm2_probs",
-              prob_col2="sm3_probs",
+              pred_col="sm1_class",
+              pred_col2="sm2_class",
+              pred_col3="sm3_class",
+              prob_col1="sm1_probs",
+              prob_col2="sm2_probs",
+              prob_col3="sm3_probs",
               ncols=5,
-              denormalize=False
+              denormalize=False,
+              message_list=["images that are correct at last softmax but not at considered softmax",
+                                      "images that are correct at considered softmax but not at last softmax"]
               ):
     """
     This function plots images where there was different predictions b/w the provided classes
@@ -445,13 +460,14 @@ def plot_diff(df, sm_col="sm2_correct", main_col="sm3_correct",
                       true_col=true_col, 
                       pred_col=pred_col, 
                       pred_col2=pred_col2,
+                      pred_col3=pred_col3,
                       prob_col1=prob_col1,
                       prob_col2=prob_col2,
+                      prob_col3=prob_col3,
                       ncols=ncols, 
                       class_map=class_names,
                       denormalize=denormalize,
-                      message_list = ["images that are correct at last softmax but not at earlier ones",
-                                      "images that are correct at earlier softmax but not at last softmax"])
+                      message_list = message_list)
     
     
 
@@ -459,8 +475,10 @@ def classwise_display(df_list, img_col, true_col, pred_col,
                       ncols=5,
                       class_map=None,
                       pred_col2=None,
+                      pred_col3=None,
                       prob_col1=None,
                       prob_col2=None,
+                      prob_col3=None,
                       denormalize=False,
                       message_list = None):
     
@@ -517,9 +535,9 @@ def classwise_display(df_list, img_col, true_col, pred_col,
             
             sub_df = sub_df.loc[list(range(ncols)),:].dropna()
             
-            sub_df.sort_values(prob_col1, ascending=False, inplace=True)
+            #sub_df.sort_values(prob_col1, ascending=False, inplace=True)
             
-            preds_mapped = [class_map[x] for x in sub_df.loc[:,pred_col].astype(int).tolist()]
+            preds_mapped1 = [class_map[x] for x in sub_df.loc[:,pred_col].astype(int).tolist()]
             
             true_mapped = [class_map[x] for x in sub_df.loc[:,true_col].astype(int).tolist()]
             
@@ -527,6 +545,11 @@ def classwise_display(df_list, img_col, true_col, pred_col,
                 preds_mapped2 = None
             else:
                 preds_mapped2 = [class_map[x] for x in sub_df.loc[:,pred_col2].astype(int).tolist()]
+                
+            if pred_col3==None:
+                preds_mapped3 = None
+            else:
+                preds_mapped3 = [class_map[x] for x in sub_df.loc[:,pred_col3].astype(int).tolist()]
                 
             if prob_col1==None:
                 prob1 = None
@@ -537,25 +560,36 @@ def classwise_display(df_list, img_col, true_col, pred_col,
                 prob2 = None
             else:
                 prob2 = sub_df.loc[:,prob_col2].tolist()
+                
+            if prob_col3==None:
+                prob3 = None
+            else:
+                prob3 = sub_df.loc[:,prob_col3].tolist()
             
             image_gallary(no_of_image = sub_df.shape[0], 
                           img = sub_df.loc[:,img_col].tolist(), 
                           img_lbl = true_mapped, 
-                          pred_lbl = preds_mapped,
+                          pred_lbl = preds_mapped1,
                           pred_lbl2=preds_mapped2,
+                          pred_lbl3=preds_mapped3,
                           prob1=prob1,
                           prob2=prob2,
+                          prob3=prob3,
                           denormalize=denormalize,
                           NUM_IMAGES_IN_ROW = ncols)
     
     
     return
 
-def plot_good_and_worst(df, sm_col="sm2_correct",
+def plot_good_and_worst(df, sm_col="sm2_correct", sm_class="sm2_class", sm_prob="sm2_probs",
               img_col="imgs",
               true_col="ys", 
-              pred_col="sm2_class",
-              prob_col="sm2_probs",
+              pred_col="sm1_class",
+              pred_col2="sm2_class",
+              pred_col3="sm3_class",
+              prob_col="sm1_probs",
+              prob_col2="sm2_probs",
+              prob_col3="sm3_probs",
               ncols=5,
               denormalize=False,
               CLASSWISE_SELECT_TOP_IMAGES = 20
@@ -573,11 +607,11 @@ def plot_good_and_worst(df, sm_col="sm2_correct",
     
     correct_df = df.loc[df[sm_col], :]
     
-    high_conf_correct_df = correct_df.sort_values([pred_col, prob_col], ascending=False).groupby(pred_col).head(CLASSWISE_SELECT_TOP_IMAGES*20)
+    high_conf_correct_df = correct_df.sort_values([sm_class, sm_prob], ascending=False).groupby(sm_class).head(CLASSWISE_SELECT_TOP_IMAGES*20)
     
     incorrect_df = df.loc[~(df[sm_col]), :]
     
-    high_conf_incorrect_df = incorrect_df.sort_values([pred_col, prob_col], ascending=False).groupby(pred_col).head(CLASSWISE_SELECT_TOP_IMAGES*20)
+    high_conf_incorrect_df = incorrect_df.sort_values([true_col, sm_prob], ascending=False).groupby(true_col).head(CLASSWISE_SELECT_TOP_IMAGES*20)
     
     print(high_conf_incorrect_df.shape, high_conf_correct_df.shape)
     
@@ -585,8 +619,11 @@ def plot_good_and_worst(df, sm_col="sm2_correct",
                       img_col=img_col,
                       true_col=true_col, 
                       pred_col=pred_col,
-                      pred_col2=pred_col,
+                      pred_col2=pred_col2,
+                      pred_col3=pred_col3,
                       prob_col1=prob_col,
+                      prob_col2=prob_col2,
+                      prob_col3=prob_col3,
                       ncols=ncols, 
                       class_map=class_names,
                       denormalize=denormalize,

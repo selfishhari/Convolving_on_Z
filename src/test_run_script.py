@@ -186,7 +186,9 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
-visual_utils.plot_diff(diff_df, denormalize=True)
+visual_utils.plot_diff(diff_df, 
+                       sm_col="sm2_correct", main_col="sm3_correct",
+                       denormalize=True)
 
 visual_utils.plot_diff(diff_df,
                        sm_col="sm1_correct", main_col="sm3_correct",
@@ -204,14 +206,13 @@ visual_utils.classwise_display(df=diff_df, img_col="imgs",
                                true_col="ys", pred_col="sm2_class", 
                                ncols=5, class_map=class_names)
 
-visual_utils.plot_good_and_worst(df=all_df, sm_col="sm2_correct",
+visual_utils.plot_good_and_worst(df=all_df, sm_col="sm2_correct", sm_class="sm2_class", sm_prob="sm2_probs",
               img_col="imgs",
               true_col="ys", 
-              pred_col="sm2_class",
-              prob_col="sm2_probs",
               ncols=10,
               denormalize=True,
               CLASSWISE_SELECT_TOP_IMAGES = 10)
+
 
 
 visual_utils.plot_cm(all_df.ys, all_df.sm1_class)
@@ -220,6 +221,7 @@ from matplotlib import pyplot as plt
 
 plt.imshow(diff_df["imgs"][0].astype(np.uint8))
 
+run_util.voting_accuracy(all_df, true_col="ys", sm_class_colnames = ["sm1_class", "sm2_class", "sm3_class"] )
 
 ##################################################
 

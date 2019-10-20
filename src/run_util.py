@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm_notebook as tqdm
 import os, datetime, time
 import visual_utils
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, accuracy_score
 import seaborn as sn
 
 def predict(model, img_list):
@@ -85,6 +85,41 @@ def early_inference_accuracy(model, test_dataset):
     df.columns = ["sm_level", "accuracy", "loss", "inference_time"]
     
     return df
+
+def _mode(array):
+    most = max(list(map(array.count, array)))
+    return list(set(filter(lambda x: array.count(x) == most, array)))
+
+def _get_mode(x):
+    
+    x = x.tolist()
+    
+    mode_list = _mode(x)
+    
+    if len(mode_list) > 1:
+        
+        if x[len(x)-1] in mode_list:
+            
+            mode = x[len(x)-1]
+            
+        else:
+            mode = mode_list[len(mode_list) - 1]
+            
+    else:
+        mode = mode_list[0]
+        
+    
+    return mode
+        
+
+def voting_accuracy(df, true_col="ys" , sm_class_colnames = ["sm1_class", "sm2_class", "sm3_class"]):
+    
+    df["mode"] = df[sm_class_colnames].apply(_get_mode, axis=1)
+    
+    voted_accuracy = accuracy_score(df[true_col], df["mode"])
+    
+    return voted_accuracy
+    
         
 
 class Run():

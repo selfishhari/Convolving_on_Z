@@ -183,7 +183,7 @@ class ZeeDenseNet(tf.keras.Model):
     
     gap3, loss3 = self.get_softmax(y, 2, layer_dict= {0:blk1, 1:blk2, 2:blk3}, last_layer_flag = True)
     
-    loss = tf.math.add_n([loss1 , 0.3 * loss2 , 0.3 * loss3])
+    loss = tf.math.add_n([0.3 * loss1 , 0.3 * loss2 , 1.0 * loss3])
     
     correct = tf.reduce_sum(tf.cast(tf.math.equal(tf.argmax(gap3, axis = 1), y), tf.float16))
     
