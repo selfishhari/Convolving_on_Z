@@ -517,6 +517,8 @@ def classwise_display(df_list, img_col, true_col, pred_col,
             
             sub_df = sub_df.loc[list(range(ncols)),:].dropna()
             
+            sub_df.sort_values(prob_col1, ascending=False, inplace=True)
+            
             preds_mapped = [class_map[x] for x in sub_df.loc[:,pred_col].astype(int).tolist()]
             
             true_mapped = [class_map[x] for x in sub_df.loc[:,true_col].astype(int).tolist()]
