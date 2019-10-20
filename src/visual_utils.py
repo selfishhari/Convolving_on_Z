@@ -448,7 +448,9 @@ def plot_diff(df, sm_col="sm2_correct", main_col="sm3_correct",
                       prob_col2=prob_col2,
                       ncols=ncols, 
                       class_map=class_names,
-                      denormalize=denormalize)
+                      denormalize=denormalize,
+                      message_list = ["images that are correct at last softmax but not at earlier ones",
+                                      "images that are correct at earlier softmax but not at last softmax"])
     
     
 
