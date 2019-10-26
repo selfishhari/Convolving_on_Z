@@ -146,6 +146,10 @@ class Run():
   
   highest_lr_epoch = 5
   
+  clr_flag = 0
+  
+  num_epochs_per_cycle = 2.5
+  
   with tf.variable_scope("global", reuse=tf.AUTO_REUSE):
 
       global_step = tf.get_variable("global_step_variable", shape=(), dtype=tf.int16,
@@ -178,6 +182,10 @@ class Run():
     
       self.comments = params["comments"]
       
+      self.clr_flag = params["clr_flag"]
+      
+      self.num_epochs_per_cycle = params["num_epochs_per_cycle"]
+      
       self.trn_data_supplier = trn_data_supplier
 
       self.tst_data_supplier = tst_data_supplier
@@ -199,21 +207,53 @@ class Run():
         perc_end = self.end_anneal_pc
         
         highest_lr_epoch = self.highest_lr_epoch
-
-        if max_lr * 0.1 < min_lr:
-
-          break_lr = min_lr * 1.1
-
-        else:
-
-          break_lr = max_lr * 0.1
-
-        lr = np.interp([t], [0, (epochs+1)//highest_lr_epoch, int((1-perc_end) * epochs), epochs+1], \
-                       [0, max_lr, break_lr, min_lr])[0]
         
-        #print(t, lr)
-
+        if self.clr_flag:
+            
+            t = [x % self.num_epochs_per_cycle for x in t]
+            
+            lr = np.interp([t], [0, self.num_epochs_per_cycle/2, self.num_epochs_per_cycle], \
+                           [min_lr, max_lr, min_lr])[0]
+            
+            
+        else:
+            
+            
+    
+            if max_lr * 0.1 < min_lr:
+    
+              break_lr = min_lr * 1.1
+    
+            else:
+    
+              break_lr = max_lr * 0.1
+    
+            lr = np.interp([t], [0, (epochs+1)//highest_lr_epoch, int((1-perc_end) * epochs), epochs+1], \
+                           [0, max_lr, break_lr, min_lr])[0]
+            
+            #print(t, lr)
+    
         return lr
+    
+  def plot_lr(self, params, trn=None, tst=None):
+      
+      self.initialize_everything(params, trn, tst)
+      
+      epochs = self.epochs
+      
+      lrs = list(range(1, 10*(epochs+1)))
+      
+      lrs = [x/10 for x in lrs]
+      
+      lr_list = self.lr_schedule(lrs)
+      
+      plt.plot(lr_list)
+      
+      plt.show()
+      
+      return
+      
+      
 
 
   def mom_schedule(self, t):

@@ -33,7 +33,7 @@ MOMENTUM = 0.95 #@param {type:"number"}
 MIN_MOMENTUM = 0.8 #@param {type:"number"}
 LEARNING_RATE = 0.4 #@param {type:"number"}
 WEIGHT_DECAY = 5e-4 #@param {type:"number"}
-EPOCHS = 1 #@param {type:"integer"}
+EPOCHS = 10 #@param {type:"integer"}
 HIGHEST_LR_EPOCH = 5#@param {type:"integer"}
 
 
@@ -42,6 +42,10 @@ MIN_LEARNING_RATE = 0.000001 #@param {type:"number"}
 END_LR_SMOOTHING_PERC = 0.15 #@param {type:"number"}
 
 COMMENTS = "Densenext test" #@param {type:"string"}
+
+CLR_FLAG = 1 #@param {type:"integer"}
+      
+NUM_EPOCHS_PER_CYCLE = 2.4 #@param {type:"number"}
 
 
 params_tune = {
@@ -68,7 +72,13 @@ params_tune = {
     
   "comments":COMMENTS,
   
-  "highest_lr_epoch":HIGHEST_LR_EPOCH
+  "highest_lr_epoch":HIGHEST_LR_EPOCH,
+  
+  "num_epochs_per_cycle":NUM_EPOCHS_PER_CYCLE,
+  
+  "clr_flag":CLR_FLAG
+  
+  
 }
 
 import data_pipeline
@@ -169,6 +179,8 @@ model = zeedensenet.ZeeDenseNet(f_filter=16,
 
 
 obj = Run()
+
+obj.plot_lr(params_tune)
 
 x = obj.run( params_tune, trn_data_supplier, tst_data_supplier, model=model)
 
