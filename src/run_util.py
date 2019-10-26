@@ -144,6 +144,8 @@ class Run():
 
   skip_testing_epochs = 0
   
+  highest_lr_epoch = 5
+  
   with tf.variable_scope("global", reuse=tf.AUTO_REUSE):
 
       global_step = tf.get_variable("global_step_variable", shape=(), dtype=tf.int16,
@@ -165,6 +167,8 @@ class Run():
       self.max_mom = params["max_mom"]
 
       self.min_mom = params["min_mom"]
+      
+      self.highest_lr_epoch = params["highest_lr_epoch"]
 
       self.wd = params["wd"]
 
@@ -173,7 +177,7 @@ class Run():
       self.skip_testing_epochs = params["skip_testing_epochs"]
     
       self.comments = params["comments"]
-
+      
       self.trn_data_supplier = trn_data_supplier
 
       self.tst_data_supplier = tst_data_supplier
@@ -193,6 +197,8 @@ class Run():
         epochs = self.epochs
         
         perc_end = self.end_anneal_pc
+        
+        highest_lr_epoch = self.highest_lr_epoch
 
         if max_lr * 0.1 < min_lr:
 
@@ -202,7 +208,7 @@ class Run():
 
           break_lr = max_lr * 0.1
 
-        lr = np.interp([t], [0, (epochs+1)//5, int((1-perc_end) * epochs), epochs+1], \
+        lr = np.interp([t], [0, (epochs+1)//highest_lr_epoch, int((1-perc_end) * epochs), epochs+1], \
                        [0, max_lr, break_lr, min_lr])[0]
         
         #print(t, lr)
@@ -217,8 +223,10 @@ class Run():
         min_mom=self.min_mom
         
         epochs=self.epochs
+        
+        highest_lr_epoch = self.highest_lr_epoch
 
-        mom = np.interp([t], [0, (epochs+1)//5, epochs], \
+        mom = np.interp([t], [0, (epochs+1)//highest_lr_epoch, epochs], \
                        [max_mom, min_mom, max_mom])[0]
         
         #print(t, mom)
