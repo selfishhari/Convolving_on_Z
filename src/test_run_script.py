@@ -171,10 +171,11 @@ from run_util import Run
 model = zeedensenet.ZeeDenseNet(f_filter=16, 
                                 dimensions_dict= {"dimensions_to_sample":(8,8)}, 
                                 layers_filters={0:32, 1:64, 2:128}, 
-                                roots_flag = True, 
+                                roots_flag = False, 
                                 num_roots_dict={0:8,1:8,2:8},
                                 multisoft_list=[0, 1,2],
-                                reluz= True, bnz=False, convz=True
+                                reluz= True, bnz=False, convz=True,
+                                residuals_flag=True
                                 )
 
 import davidnet_v2
