@@ -210,7 +210,7 @@ class Run():
         
         if self.clr_flag:
             
-            t = [x % self.num_epochs_per_cycle for x in t]
+            t = t % self.num_epochs_per_cycle
             
             lr = np.interp([t], [0, self.num_epochs_per_cycle/2, self.num_epochs_per_cycle], \
                            [min_lr, max_lr, min_lr])[0]
@@ -245,7 +245,7 @@ class Run():
       
       lrs = [x/10 for x in lrs]
       
-      lr_list = self.lr_schedule(lrs)
+      lr_list = [self.lr_schedule(x) for x in lrs]
       
       plt.plot(lr_list)
       
