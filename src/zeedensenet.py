@@ -20,7 +20,9 @@ class ZeeDenseNet(tf.keras.Model):
                layers_filters = {0:16, 1:32, 2:64},
                multisoft_list = [0, 1, 2],
                roots_flag = False,
-               num_roots_dict = {0:8, 1:8, 2:8}
+               num_roots_dict = {0:8, 1:8, 2:8},
+               
+               reluz= True, bnz=True, convz=True
                ):
     
     super().__init__()
@@ -66,7 +68,10 @@ class ZeeDenseNet(tf.keras.Model):
                
                res=True )
     
-    self.blk4 = ZeeConvBlk(dimensions_dict= dimensions_dict, layers_filters=layers_filters, gap_mode=gap_mode, roots_flag=self.roots_flag, num_roots_dict= self.num_roots_dict)
+    self.blk4 = ZeeConvBlk(dimensions_dict= dimensions_dict, layers_filters=layers_filters, 
+                           gap_mode=gap_mode, roots_flag=self.roots_flag, 
+                           num_roots_dict= self.num_roots_dict, reluz= True, bnz=True, 
+                           convz=True)
     
     self.pool = tf.keras.layers.GlobalMaxPool2D()
     

@@ -441,7 +441,13 @@ class ZeeConvBlk(tf.keras.Model):
                  
                  roots_flag = False,
                  
-                 num_roots_dict = {0:8, 1:8, 2:8}
+                 num_roots_dict = {0:8, 1:8, 2:8},
+                 
+                 reluz = True,
+                 
+                 bnz = True,
+                 
+                 convz = True
                  
                  ):
         
@@ -469,6 +475,12 @@ class ZeeConvBlk(tf.keras.Model):
         
         self.num_roots_dict = num_roots_dict
         
+        self.reluz = reluz
+        
+        self.convz = convz
+        
+        self.bnz = bnz
+        
         for layer in range(self.num_layers):
             
             if self.roots_flag == False:
@@ -476,7 +488,7 @@ class ZeeConvBlk(tf.keras.Model):
                 curr_filters = layers_filters[layer]
                 
                 self.convolution_blocks[layer] = ConvBnRl(filters=curr_filters, kernel_size=(3,3), strides=(1,1), padding="same" , dilation_rate=self.dilation_rate, 
-                                      kernel_regularizer = self.kernel_regularizer, kernel_initializer=self.kernel_initializer, conv_flag=True, bnflag=True,  relu=True, kernel_name=str(random.random())+"conv")
+                                      kernel_regularizer = self.kernel_regularizer, kernel_initializer=self.kernel_initializer, conv_flag=self.convz, bnflag=self.bnz,  relu=self.reluz, kernel_name=str(random.random())+"conv")
                 
             else:
                 

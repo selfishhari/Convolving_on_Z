@@ -34,6 +34,7 @@ MIN_MOMENTUM = 0.8 #@param {type:"number"}
 LEARNING_RATE = 0.4 #@param {type:"number"}
 WEIGHT_DECAY = 5e-4 #@param {type:"number"}
 EPOCHS = 1 #@param {type:"integer"}
+HIGHEST_LR_EPOCH = 5#@param {type:"integer"}
 
 
 MIN_LEARNING_RATE = 0.000001 #@param {type:"number"}
@@ -65,7 +66,9 @@ params_tune = {
     
   "batches_per_epoch":3//BATCH_SIZE,
     
-  "comments":COMMENTS
+  "comments":COMMENTS,
+  
+  "highest_lr_epoch":HIGHEST_LR_EPOCH
 }
 
 import data_pipeline
@@ -160,7 +163,8 @@ model = zeedensenet.ZeeDenseNet(f_filter=16,
                                 layers_filters={0:32, 1:64, 2:128}, 
                                 roots_flag = True, 
                                 num_roots_dict={0:8,1:8,2:8},
-                                multisoft_list=[0, 1,2]
+                                multisoft_list=[0, 1,2],
+                                reluz= True, bnz=False, convz=True
                                 )
 
 
