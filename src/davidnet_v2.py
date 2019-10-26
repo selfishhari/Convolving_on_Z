@@ -169,9 +169,11 @@ class DavidNetMultiSoft(tf.keras.Model):
             
             multi_accuracies["sm3"]["prob"] = tf.nn.softmax(gap3, axis=1)
             
+    loss = tf.math.add_n([0.3 * loss1 , 0.3 * loss2 , 1.0 * loss3])
+            
     if infer_multi == True:
         
-            return loss3, correct, gap3, multi_accuracies
+            return loss, correct, gap3, multi_accuracies
     
     
-    return loss3, correct, gap3
+    return loss, correct, gap3

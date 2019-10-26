@@ -33,7 +33,7 @@ MOMENTUM = 0.95 #@param {type:"number"}
 MIN_MOMENTUM = 0.8 #@param {type:"number"}
 LEARNING_RATE = 0.4 #@param {type:"number"}
 WEIGHT_DECAY = 5e-4 #@param {type:"number"}
-EPOCHS = 10 #@param {type:"integer"}
+EPOCHS = 1 #@param {type:"integer"}
 HIGHEST_LR_EPOCH = 5#@param {type:"integer"}
 
 
@@ -177,7 +177,14 @@ model = zeedensenet.ZeeDenseNet(f_filter=16,
                                 reluz= True, bnz=False, convz=True
                                 )
 
+import davidnet_v2
+reload(davidnet_v2)
+from davidnet_v2 import DavidNetMultiSoft
 
+model = DavidNetMultiSoft(f_filter=64, weight=0.125, 
+               kernel_initializer='glorot_uniform', multisoft_list = [0, 1, 2],
+               residual_strategy = [True, True, True]
+                                )
 obj = Run()
 
 obj.plot_lr(params_tune)
