@@ -43,9 +43,15 @@ END_LR_SMOOTHING_PERC = 0.15 #@param {type:"number"}
 
 COMMENTS = "Densenext test" #@param {type:"string"}
 
-CLR_FLAG = 1 #@param {type:"integer"}
+CLR_FLAG = "sgd" #@param {type:"string"}#values-sgd, triangle, falling_triangle, one_cycle_policy
       
 NUM_EPOCHS_PER_CYCLE = 2.4 #@param {type:"number"}
+
+NUM_CYCLES_TO_DROP_BY = 2 #@param {type:"integer"}
+
+DROP_FACTOR = 10 #@param {type:"number"}
+
+SGD_LR = 0.0004 #@param {type:"number"}
 
 
 params_tune = {
@@ -76,7 +82,13 @@ params_tune = {
   
   "num_epochs_per_cycle":NUM_EPOCHS_PER_CYCLE,
   
-  "clr_flag":CLR_FLAG
+  "clr_flag":CLR_FLAG,
+  
+  "drop_by_factor_after_num_cycles":NUM_CYCLES_TO_DROP_BY,
+  
+  "drop_by_factor":DROP_FACTOR,
+  
+  "sgd_lr" : SGD_LR
   
   
 }
@@ -189,6 +201,10 @@ model = DavidNetMultiSoft(f_filter=64, weight=0.125,
 obj = Run()
 
 obj.plot_lr(params_tune)
+
+params_tune["clr_flag"] = "sgd"
+
+params_tune["sgd_lr"] = 40
 
 x = obj.run( params_tune, trn_data_supplier, tst_data_supplier, model=model)
 

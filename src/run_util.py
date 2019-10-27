@@ -150,12 +150,25 @@ class Run():
   
   num_epochs_per_cycle = 2.5
   
-  with tf.variable_scope("global", reuse=tf.AUTO_REUSE):
-
-      global_step = tf.get_variable("global_step_variable", shape=(), dtype=tf.int16,
-        initializer=tf.zeros_initializer)
-
+  drop_by_factor_after_num_cycles = 3
   
+  drop_by_factor = 10
+  
+  sgd_lr = 0.0004
+  
+  def __init__(self):
+      
+      with tf.variable_scope("global", reuse=tf.AUTO_REUSE):
+
+          self.global_step = tf.get_variable("global_step_variable", shape=(), dtype=tf.int16,
+            initializer=tf.zeros_initializer)
+          
+      self.lr_func = self.get_lr_func()
+      
+      self.mom_func = self.get_mom_func()
+      
+      self.opt = self.get_opt()
+          
   def initialize_everything(self, params, trn_data_supplier, tst_data_supplier):
     
       self.epochs = params["epochs"]
@@ -186,9 +199,19 @@ class Run():
       
       self.num_epochs_per_cycle = params["num_epochs_per_cycle"]
       
+      self.drop_by_factor_after_num_cycles = params["drop_by_factor_after_num_cycles"]
+      
+      self.drop_by_factor = params["drop_by_factor"]
+      
+      self.sgd_lr = params["sgd_lr"]
+      
       self.trn_data_supplier = trn_data_supplier
 
       self.tst_data_supplier = tst_data_supplier
+      
+      self.lr_func = self.get_lr_func()
+      
+      self.mom_func = self.get_mom_func()
   #### END OF INITIALIZATIONS ###
   #------------------------------------------------------------------------------------------------------------------------------#
       
@@ -208,15 +231,35 @@ class Run():
         
         highest_lr_epoch = self.highest_lr_epoch
         
-        if self.clr_flag:
+        if self.clr_flag == "triangle":
             
             t = t % self.num_epochs_per_cycle
             
             lr = np.interp([t], [0, self.num_epochs_per_cycle/2, self.num_epochs_per_cycle], \
                            [min_lr, max_lr, min_lr])[0]
             
+        elif self.clr_flag == "falling_triangle":
             
-        else:
+            cycle_num = t//self.num_epochs_per_cycle + 1
+            
+            drop_cycles = cycle_num % self.drop_by_factor_after_num_cycles
+            
+            if drop_cycles > 1:
+                
+                cycle_num = cycle_num * self.drop_by_factor
+            
+            t = t % self.num_epochs_per_cycle
+            
+            lr = np.interp([t], [0, self.num_epochs_per_cycle/2, self.num_epochs_per_cycle], \
+                           [min_lr, max_lr, min_lr])[0]
+            lr = lr / cycle_num
+            
+            
+        elif self.clr_flag == "sgd":
+            
+            lr = self.sgd_lr
+            
+        elif self.clr_flag == "one_cycle_policy":
             
             
     
@@ -231,8 +274,6 @@ class Run():
             lr = np.interp([t], [0, (epochs+1)//highest_lr_epoch, int((1-perc_end) * epochs), epochs+1], \
                            [0, max_lr, break_lr, min_lr])[0]
             
-            #print(t, lr)
-    
         return lr
     
   def plot_lr(self, params, trn=None, tst=None):
@@ -271,13 +312,31 @@ class Run():
         
         #print(t, mom)
         return mom
+    
 
 
-  lr_func = lambda : Run.lr_schedule(Run, Run.global_step/Run.batches_per_epoch)/Run.batch_size
-
-  mom_func = lambda : Run.mom_schedule(Run, Run.global_step/Run.batches_per_epoch)
-
-  opt = tf.train.MomentumOptimizer(lr_func, momentum=mom_func, use_nesterov=True)
+  def get_lr_func(self):
+      
+      lr_func = lambda : self.lr_schedule(self.global_step/self.batches_per_epoch)/self.batch_size
+      
+      return lr_func
+  
+  def get_mom_func(self):
+      
+      mom_func = lambda : self.mom_schedule(self.global_step/self.batches_per_epoch)
+      
+      return mom_func
+  
+  def get_opt(self):
+      
+      lr_func = self.get_lr_func()
+      
+      mom_func = self.get_mom_func()
+      
+      opt = tf.train.MomentumOptimizer(lr_func, momentum=mom_func, use_nesterov=True)
+      
+      return opt
+  
   #### END OF LR/MOM Schedulers ###
   #------------------------------------------------------------------------------------------------------------------------------#
       
