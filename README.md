@@ -1,4 +1,4 @@
-# Extensive Vision Applications- Research Team
+# Extensive Vision AI- Research Team
 EVA is a learning community based out of bangalore focusing on AI. This was one of the several experimental projects tried by students.
 https://sites.google.com/theschoolofai.in/theschoolofai/home
 
