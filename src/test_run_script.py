@@ -34,6 +34,7 @@ MIN_MOMENTUM = 0.8 #@param {type:"number"}
 LEARNING_RATE = 0.4 #@param {type:"number"}
 WEIGHT_DECAY = 5e-4 #@param {type:"number"}
 EPOCHS = 1 #@param {type:"integer"}
+HIGHEST_LR_EPOCH = 5#@param {type:"integer"}
 
 
 MIN_LEARNING_RATE = 0.000001 #@param {type:"number"}
@@ -41,6 +42,16 @@ MIN_LEARNING_RATE = 0.000001 #@param {type:"number"}
 END_LR_SMOOTHING_PERC = 0.15 #@param {type:"number"}
 
 COMMENTS = "Densenext test" #@param {type:"string"}
+
+CLR_FLAG = "sgd" #@param {type:"string"}#values-sgd, triangle, falling_triangle, one_cycle_policy
+      
+NUM_EPOCHS_PER_CYCLE = 2.4 #@param {type:"number"}
+
+NUM_CYCLES_TO_DROP_BY = 2 #@param {type:"integer"}
+
+DROP_FACTOR = 10 #@param {type:"number"}
+
+SGD_LR = 0.0004 #@param {type:"number"}
 
 
 params_tune = {
@@ -65,7 +76,21 @@ params_tune = {
     
   "batches_per_epoch":3//BATCH_SIZE,
     
-  "comments":COMMENTS
+  "comments":COMMENTS,
+  
+  "highest_lr_epoch":HIGHEST_LR_EPOCH,
+  
+  "num_epochs_per_cycle":NUM_EPOCHS_PER_CYCLE,
+  
+  "clr_flag":CLR_FLAG,
+  
+  "drop_by_factor_after_num_cycles":NUM_CYCLES_TO_DROP_BY,
+  
+  "drop_by_factor":DROP_FACTOR,
+  
+  "sgd_lr" : SGD_LR
+  
+  
 }
 
 import data_pipeline
@@ -158,13 +183,28 @@ from run_util import Run
 model = zeedensenet.ZeeDenseNet(f_filter=16, 
                                 dimensions_dict= {"dimensions_to_sample":(8,8)}, 
                                 layers_filters={0:32, 1:64, 2:128}, 
-                                roots_flag = True, 
+                                roots_flag = False, 
                                 num_roots_dict={0:8,1:8,2:8},
-                                multisoft_list=[0, 1,2]
+                                multisoft_list=[0, 1,2],
+                                reluz= True, bnz=False, convz=True,
+                                residuals_flag=True
                                 )
 
+import davidnet_v2
+reload(davidnet_v2)
+from davidnet_v2 import DavidNetMultiSoft
 
+model = DavidNetMultiSoft(f_filter=64, weight=0.125, 
+               kernel_initializer='glorot_uniform', multisoft_list = [0, 1, 2],
+               residual_strategy = [True, True, True]
+                                )
 obj = Run()
+
+obj.plot_lr(params_tune)
+
+params_tune["clr_flag"] = "sgd"
+
+params_tune["sgd_lr"] = 40
 
 x = obj.run( params_tune, trn_data_supplier, tst_data_supplier, model=model)
 

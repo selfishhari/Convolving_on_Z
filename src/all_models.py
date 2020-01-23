@@ -47,46 +47,47 @@ class ResNext_50(tf.keras.Model):
 
 class DavidNet(tf.keras.Model):
   
-  def __init__(self, num_classes= 10, f_filter=64, weight=0.125):
+  def __init__(self, num_classes= 10, f_filter=64, weight=0.125, kernel_initializer='glorot_uniform',
+               residual_strategy = [True, True, True]):
     
     super().__init__()
     
-    self.init_conv_bn = ConvBnRl(filters=f_filter, kernel_size=(1,1), strides=(1,1), padding="same" , dilation_rate=(1,1), 
-                                  kernel_regularizer = None, kernel_initializer='glorot_uniform', conv_flag=True, bnflag=True,  relu=True)
+    self.init_conv_bn = ConvBnRl(filters=f_filter, kernel_size=(3,3), strides=(1,1), padding="same" , dilation_rate=(1,1), 
+                                  kernel_regularizer = None, kernel_initializer=kernel_initializer, conv_flag=True, bnflag=True,  relu=True)
     
-    self.blk1 = ResBlk(cbr = ConvBnRl(filters=f_filter*2, kernel_size=(3,3), strides=(1,1), padding="same" , conv_flag=True, bnflag=True, relu=True),
+    self.blk1 = ResBlk(cbr = ConvBnRl(filters=f_filter*2, kernel_size=(3,3), strides=(1,1), padding="same" , kernel_initializer=kernel_initializer, conv_flag=True, bnflag=True, relu=True),
                
-               cbr_res1 = ConvBnRl(filters=f_filter*2, kernel_size=(3,3), strides=(1,1), padding="same" , conv_flag=True, bnflag=True, relu=True),
+               cbr_res1 = ConvBnRl(filters=f_filter*2, kernel_size=(3,3), strides=(1,1), padding="same" , kernel_initializer=kernel_initializer, conv_flag=True, bnflag=True, relu=True),
                
-               cbr_res2 = ConvBnRl(filters=f_filter*2, kernel_size=(3,3), strides=(1,1), padding="same" , conv_flag=True, bnflag=True, relu=True),
+               cbr_res2 = ConvBnRl(filters=f_filter*2, kernel_size=(3,3), strides=(1,1), padding="same" , kernel_initializer=kernel_initializer, conv_flag=True, bnflag=True, relu=True),
                
                pool=tf.keras.layers.MaxPool2D(pool_size=(2, 2), strides=None, padding='same'), 
                
-               res=True )
+               res=residual_strategy[0] )
     
-    self.blk2 = ResBlk(cbr = ConvBnRl(filters=f_filter*4, kernel_size=(3,3), strides=(1,1), padding="same" , conv_flag=True, bnflag=True, relu=True),
+    self.blk2 = ResBlk(cbr = ConvBnRl(filters=f_filter*4, kernel_size=(3,3), strides=(1,1), padding="same" , kernel_initializer=kernel_initializer, conv_flag=True, bnflag=True, relu=True),
                
-               cbr_res1 = ConvBnRl(filters=f_filter*4, kernel_size=(3,3), strides=(1,1), padding="same" , conv_flag=True, bnflag=True, relu=True),
+               cbr_res1 = ConvBnRl(filters=f_filter*4, kernel_size=(3,3), strides=(1,1), padding="same" , kernel_initializer=kernel_initializer, conv_flag=True, bnflag=True, relu=True),
                
-               cbr_res2 = ConvBnRl(filters=f_filter*4, kernel_size=(3,3), strides=(1,1), padding="same" , conv_flag=True, bnflag=True, relu=True),
+               cbr_res2 = ConvBnRl(filters=f_filter*4, kernel_size=(3,3), strides=(1,1), padding="same" , kernel_initializer=kernel_initializer, conv_flag=True, bnflag=True, relu=True),
                
                pool=tf.keras.layers.MaxPool2D(pool_size=(2, 2), strides=None, padding='same'), 
                
-               res=True )
+               res=residual_strategy[1] )
     
-    self.blk3 = ResBlk(cbr = ConvBnRl(filters=f_filter*8, kernel_size=(3,3), strides=(1,1), padding="same" , conv_flag=True, bnflag=True, relu=True),
+    self.blk3 = ResBlk(cbr = ConvBnRl(filters=f_filter*8, kernel_size=(3,3), strides=(1,1), padding="same" , kernel_initializer=kernel_initializer, conv_flag=True, bnflag=True, relu=True),
                
-               cbr_res1 = ConvBnRl(filters=f_filter*8, kernel_size=(3,3), strides=(1,1), padding="same" , conv_flag=True, bnflag=True, relu=True),
+               cbr_res1 = ConvBnRl(filters=f_filter*8, kernel_size=(3,3), strides=(1,1), padding="same" , kernel_initializer=kernel_initializer, conv_flag=True, bnflag=True, relu=True),
                
-               cbr_res2 = ConvBnRl(filters=f_filter*8, kernel_size=(3,3), strides=(1,1), padding="same" , conv_flag=True, bnflag=True, relu=True),
+               cbr_res2 = ConvBnRl(filters=f_filter*8, kernel_size=(3,3), strides=(1,1), padding="same" , kernel_initializer=kernel_initializer, conv_flag=True, bnflag=True, relu=True),
                
                pool=tf.keras.layers.MaxPool2D(pool_size=(2, 2), strides=None, padding='same'), 
                
-               res=True )
+               res=residual_strategy[2] )
     
     self.pool = tf.keras.layers.GlobalMaxPool2D()
     
-    self.linear = tf.keras.layers.Dense(num_classes, kernel_initializer='glorot_uniform', use_bias=False)
+    self.linear = tf.keras.layers.Dense(num_classes, kernel_initializer=kernel_initializer, use_bias=False)
     
     self.weight = weight
 

@@ -20,7 +20,12 @@ class ZeeDenseNet(tf.keras.Model):
                layers_filters = {0:16, 1:32, 2:64},
                multisoft_list = [0, 1, 2],
                roots_flag = False,
-               num_roots_dict = {0:8, 1:8, 2:8}
+               num_roots_dict = {0:8, 1:8, 2:8},
+               residuals_flag = False,
+               reluz= True, bnz=True, convz=True,
+               ls_coeff1 = 0.3,
+               ls_coeff2 = 0.3,
+               ls_coeff3 = 1.0,
                ):
     
     super().__init__()
@@ -32,6 +37,14 @@ class ZeeDenseNet(tf.keras.Model):
     self.num_roots_dict = num_roots_dict
     
     self.layers_filters = layers_filters
+    
+    self.residuals_flag = residuals_flag
+    
+    self.ls_coeff1 = ls_coeff1
+    
+    self.ls_coeff2 = ls_coeff2
+    
+    self.ls_coeff3 = ls_coeff3
     
     self.init_conv_bn = ConvBnRl(filters=f_filter, kernel_size=(3,3), strides=(1,1), padding="same" , dilation_rate=(1,1), 
                                   kernel_regularizer = None, kernel_initializer='glorot_uniform', conv_flag=True, bnflag=True,  relu=True, kernel_name=str(random.random())+"conv")
@@ -66,7 +79,10 @@ class ZeeDenseNet(tf.keras.Model):
                
                res=True )
     
-    self.blk4 = ZeeConvBlk(dimensions_dict= dimensions_dict, layers_filters=layers_filters, gap_mode=gap_mode, roots_flag=self.roots_flag, num_roots_dict= self.num_roots_dict)
+    self.blk4 = ZeeConvBlk(dimensions_dict= dimensions_dict, layers_filters=layers_filters, 
+                           gap_mode=gap_mode, roots_flag=self.roots_flag, 
+                           num_roots_dict= self.num_roots_dict, reluz= True, bnz=True, 
+                           convz=True, residuals_flag=self.residuals_flag)
     
     self.pool = tf.keras.layers.GlobalMaxPool2D()
     
@@ -183,7 +199,7 @@ class ZeeDenseNet(tf.keras.Model):
     
     gap3, loss3 = self.get_softmax(y, 2, layer_dict= {0:blk1, 1:blk2, 2:blk3}, last_layer_flag = True)
     
-    loss = tf.math.add_n([0.3 * loss1 , 0.3 * loss2 , 1.0 * loss3])
+    loss = tf.math.add_n([self.ls_coeff1 * loss1 , self.ls_coeff2 * loss2 , self.ls_coeff3 * loss3])
     
     correct = tf.reduce_sum(tf.cast(tf.math.equal(tf.argmax(gap3, axis = 1), y), tf.float16))
     
