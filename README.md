@@ -9,9 +9,11 @@ https://sites.google.com/theschoolofai.in/theschoolofai/home
   
   Our approach is stemmed from the following understanding of properties of Densenets responsible for it's success
   1. #### Feature Propagation: 
-    Features generated in earlier layers of our architecture needs to be passed on further so that the decision layer has information of features belonging to low receptive field images.
+    Features generated in earlier layers of our architecture needs to be passed on further so that
+    the decision layer has information of features belonging to low receptive field images.
   2. #### New feature Creation:
-    This is the result of every convolution that tries to create new features that could help make the decision
+    This is the result of every convolution that tries to create new features that could help make
+    the decision
     
 So if we are able to propagate features without having to use too many skip connections we might be able to succeed. Hence we stiched the outputs of all layers to form one image and started convolving on them to create a combination of feature that would help make the decision
 
