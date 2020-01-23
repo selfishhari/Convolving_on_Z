@@ -3,7 +3,18 @@ EVA is a learning community based out of bangalore focusing on AI. This was one 
 https://sites.google.com/theschoolofai.in/theschoolofai/home
 
 
+  # What is this about?
+  Densenets are one of the best possible architectures that could be written by humans for computer vision. Networks written by RL systems have beaten all benchmarks so far in Computer Vision.
+  However densenets suffer from a massive problem of using very high memory due to several skip connections. In this work we try to evaluate if there is any merit to replicate what densenet does without having to make use of too much memory.
   
+  Our approach is stemmed from the following understanding of properties of Densenets responsible for it's success
+  1. #### Feature Propagation: 
+    Features generated in earlier layers of our architecture needs to be passed on further so that the decision layer has information of features belonging to low receptive field images.
+  2. #### New feature Creation:
+    This is the result of every convolution that tries to create new features that could help make the decision
+    
+So if we are able to propagate features without having to use too many skip connections we might be able to succeed. Hence we stiched the outputs of all layers to form one image and started convolving on them to create a combination of feature that would help make the decision
+
   
   
   # Description of approach:
@@ -78,3 +89,8 @@ https://sites.google.com/theschoolofai.in/theschoolofai/home
   The training function is in:
   https://github.com/selfishhari/eva_research_team4/blob/c252d5c288917b5a58f097b59ffa1eab8d0c4a04/src/run_util.py#L147 line number:147
   
+  
+Results:
+
+We noted that these architectures were performing almost as same as the backbone architectures even with much more parameters.
+Hence there was no evidence to suggest convolving on Z directions would solve feature propagation specifically.
