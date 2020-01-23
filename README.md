@@ -43,13 +43,13 @@ So if we are able to propagate features without having to use too many skip conn
   
   A weighted sum of loss from each of these three layers are computed as final loss
 
-# Important files
+#### Important files
   
   Forgive my naming convention. I have called the network as zeedensenet
    
   Notebook to follow is in:
   
-  ## Single Softmax:
+  #### Single Softmax:
   (just a single z-convolution layer with 2 kernels)
   https://github.com/selfishhari/eva_research_team4/blob/densenext/notebooks/testing_model_api_zeedensenext.ipynb
   
@@ -59,14 +59,14 @@ So if we are able to propagate features without having to use too many skip conn
   When I increase my zeedense layers the accuracy drops.
   However it reached 85% in just 3-4 epochs and then stagnates
   
-  ## Multisoftmax:
-  87%(voting accuracy-94%)
+  #### Multisoftmax:
+  87%
   Most updated notebook with visualizations:(87% just multisoftmax, voting accuracy-94%)
   
   https://github.com/selfishhari/eva_research_team4/blob/master/notebooks/zeedensenext_multisoft_501kparams_xaxis_noroots_withviz.ipynb
-  ### Voting accuracy:
+  #### Voting accuracy:
   Calculated by taking mode of predictions from different softmax layers. If all 3 gave different class softmax3 output is taken.
-  Accuracy calculated by this approach gave a 7% lift.
+  
   
   7M params:
   
@@ -92,7 +92,7 @@ So if we are able to propagate features without having to use too many skip conn
   https://github.com/selfishhari/eva_research_team4/blob/c252d5c288917b5a58f097b59ffa1eab8d0c4a04/src/run_util.py#L147 line number:147
   
   
-Results:
+#### Results:
 
 We noted that these architectures were performing almost as same as the backbone architectures even with much more parameters.
 Hence there was no evidence to suggest convolving on Z directions would solve feature propagation specifically.
